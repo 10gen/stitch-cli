@@ -93,11 +93,13 @@ func (ac *AuthClient) RefreshAuth() (auth.Response, error) {
 
 // ExecuteRequest makes a call to the provided path, supplying the user's access token
 func (ac *AuthClient) ExecuteRequest(method, path string, options RequestOptions) (*http.Response, error) {
-	res, err := ac.Client.ExecuteRequest(method, path, RequestOptions{
-		Header: http.Header{
-			"Authorization": []string{"Bearer " + ac.user.AccessToken},
-		},
-	})
+	if options.Header == nil {
+		options.Header = http.Header{}
+	}
+
+	options.Header.Add("Authorization", "Bearer "+ac.user.AccessToken)
+
+	res, err := ac.Client.ExecuteRequest(method, path, options)
 	if err != nil {
 		return nil, err
 	}

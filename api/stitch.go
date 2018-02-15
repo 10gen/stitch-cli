@@ -12,7 +12,13 @@ import (
 const (
 	authProviderCloudLoginRoute = "/auth/providers/mongodb-cloud/login"
 	appExportRoute              = "/groups/%s/apps/%s/export"
+	appImportRoute              = "/groups/%s/apps/%s/import"
 )
+
+// StitchResponse represents a response from a Stitch API call
+type StitchResponse struct {
+	Error string `json:"error"`
+}
 
 // NewStitchClient returns a new StitchClient to be used for making calls to the Stitch Admin API
 func NewStitchClient(baseURL string, client Client) StitchClient {
@@ -66,4 +72,11 @@ func (sc StitchClient) Authenticate(apiKey, username string) (*auth.Response, er
 // Export will download a Stitch app as a .zip
 func (sc StitchClient) Export(groupID, appID string) (*http.Response, error) {
 	return sc.ExecuteRequest(http.MethodGet, sc.baseURL+fmt.Sprintf(appExportRoute, groupID, appID), RequestOptions{})
+}
+
+// Import will push a local Stitch app to the server
+func (sc StitchClient) Import(groupID, appID string, appData []byte) (*http.Response, error) {
+	return sc.ExecuteRequest(http.MethodPost, sc.baseURL+fmt.Sprintf(appImportRoute, groupID, appID), RequestOptions{
+		Body: bytes.NewReader(appData),
+	})
 }
