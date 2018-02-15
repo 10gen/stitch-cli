@@ -1,8 +1,5 @@
 {
-  "config_version": 1,
-  "schema_version": 3,
-  "name": "simple-app",
-  "security": {
-    "allowed_request_origins": []
-  }
+  "_id" : "7a110c644810c54c770dd367",
+  "name" : "function_b",
+  "private" : true
 }
