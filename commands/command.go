@@ -3,6 +3,7 @@
 package commands
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -13,6 +14,16 @@ import (
 	"github.com/mitchellh/cli"
 	"github.com/mitchellh/go-homedir"
 	flag "github.com/ogier/pflag"
+)
+
+const (
+	flagAppIDName   = "app-id"
+	flagGroupIDName = "group-id"
+)
+
+var (
+	errAppIDRequired   = fmt.Errorf("an App ID (--%s=[string]) must be supplied to export an app", flagAppIDName)
+	errGroupIDRequired = fmt.Errorf("a Group ID (--%s=[string]) must be supplied to export an app", flagGroupIDName)
 )
 
 // BaseCommand handles the parsing and execution of a command.
@@ -174,6 +185,20 @@ func (c *BaseCommand) Ask(query string) (bool, error) {
 
 		res, _ = c.UI.Ask("Could not understand response, try again [y/n]: ")
 	}
+}
+
+// Help defines help documentation for parameters that apply to all commands
+func (c *BaseCommand) Help() string {
+	return `
+
+  --config-path [string]
+	Location to write user configuration data to (defaults to ~/.config/stitch/stitch)
+
+  --color [boolean]
+	Use colors or not. Set to false if you do not want color
+
+  --yes [boolean]
+	Bypass prompts. Set to 'y' if you do not want to be prompted for input.`
 }
 
 func yay(s string) bool {

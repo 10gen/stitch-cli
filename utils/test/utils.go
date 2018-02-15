@@ -2,12 +2,14 @@ package testutils
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/10gen/stitch-cli/api"
 	"github.com/10gen/stitch-cli/auth"
@@ -160,4 +162,20 @@ func NewMemoryStrategy(data []byte) *MemoryStrategy {
 	return &MemoryStrategy{
 		data: data,
 	}
+}
+
+// GenerateValidAccessToken generates and returns a valid access token *from the future*
+func GenerateValidAccessToken() string {
+	token := auth.JWT{
+		Exp: time.Now().Add(time.Hour).Unix(),
+	}
+
+	tokenBytes, err := json.Marshal(token)
+	if err != nil {
+		panic(err)
+	}
+
+	tokenString := base64.StdEncoding.EncodeToString(tokenBytes)
+
+	return fmt.Sprintf("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.%s.RuF0KMEBAalfnsdMeozpQLQ_2hK27l9omxtTp8eF1yI", tokenString)
 }
