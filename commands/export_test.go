@@ -1,18 +1,13 @@
 package commands
 
 import (
-	"bytes"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/10gen/stitch-cli/auth"
 	"github.com/10gen/stitch-cli/user"
 	u "github.com/10gen/stitch-cli/utils/test"
 	gc "github.com/smartystreets/goconvey/convey"
@@ -34,8 +29,8 @@ func TestExportCommand(t *testing.T) {
 	}
 
 	t.Run("should require an app-id", func(t *testing.T) {
-		loginCommand, mockUI := setup()
-		exitCode := loginCommand.Run([]string{})
+		exportCommand, mockUI := setup()
+		exitCode := exportCommand.Run([]string{})
 		u.So(t, exitCode, gc.ShouldEqual, 1)
 
 		u.So(t, mockUI.ErrorWriter.String(), gc.ShouldContainSubstring, errAppIDRequired.Error())
@@ -63,7 +58,7 @@ func TestExportCommand(t *testing.T) {
 			exportCommand.client = mockClient
 			exportCommand.user = &user.User{
 				APIKey:      "my-api-key",
-				AccessToken: generateValidAccessToken(),
+				AccessToken: u.GenerateValidAccessToken(),
 			}
 			exportCommand.exportToDirectory = func(dest string, r io.Reader) error {
 				return nil
@@ -127,13 +122,13 @@ func TestExportCommand(t *testing.T) {
 		t.Run("returns an error when the response from the API is unexpected", func(t *testing.T) {
 			exportCommand, mockUI := setup(&http.Response{
 				StatusCode: http.StatusTeapot,
-				Body:       u.NewResponseBody(bytes.NewReader([]byte{})),
+				Body:       u.NewResponseBody(strings.NewReader(`{ "error": "oh noes" }`)),
 			})
 
 			exitCode := exportCommand.Run([]string{`--app-id=my-cool-app`, `--group-id=group-a-doop`})
 			u.So(t, exitCode, gc.ShouldEqual, 1)
 
-			u.So(t, mockUI.ErrorWriter.String(), gc.ShouldContainSubstring, "expected API status to be 200, received 418 instead")
+			u.So(t, mockUI.ErrorWriter.String(), gc.ShouldContainSubstring, "oh noes")
 		})
 	})
 }
@@ -151,19 +146,4 @@ func buildValidExportResponse() (string, string, *http.Response) {
 	}
 
 	return dest, data, r
-}
-
-func generateValidAccessToken() string {
-	token := auth.JWT{
-		Exp: time.Now().Add(time.Hour).Unix(),
-	}
-
-	tokenBytes, err := json.Marshal(token)
-	if err != nil {
-		panic(err)
-	}
-
-	tokenString := base64.StdEncoding.EncodeToString(tokenBytes)
-
-	return fmt.Sprintf("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.%s.RuF0KMEBAalfnsdMeozpQLQ_2hK27l9omxtTp8eF1yI", tokenString)
 }
