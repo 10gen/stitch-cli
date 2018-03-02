@@ -180,10 +180,9 @@ func (sc *basicStitchClient) Import(groupID, appID string, appData []byte, strat
 func (sc *basicStitchClient) invokeImportRoute(groupID, appID string, appData []byte, strategy string, diff bool) (*http.Response, error) {
 	url := fmt.Sprintf(appImportRoute, groupID, appID)
 
+	url += fmt.Sprintf("?strategy=%s", strategy)
 	if diff {
-		url += fmt.Sprintf("?diff=true&strategy=%s", strategy)
-	} else {
-		url += fmt.Sprintf("?strategy=%s", strategy)
+		url += "&diff=true"
 	}
 
 	return sc.ExecuteRequest(http.MethodPost, url, RequestOptions{Body: bytes.NewReader(appData)})
