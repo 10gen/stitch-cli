@@ -30,6 +30,9 @@ func setUpBasicCommand() (*ImportCommand, *cli.MockUi) {
 	importCommand.writeToDirectory = func(dest string, r io.Reader, overwrite bool) error {
 		return nil
 	}
+	importCommand.writeAppConfigToFile = func(dest string, app models.AppInstanceData) error {
+		return nil
+	}
 
 	mockStitchClient := &u.MockStitchClient{
 		ExportFn: func(groupID, appID string) (string, io.ReadCloser, error) {
@@ -110,6 +113,12 @@ func TestImportNewApp(t *testing.T) {
 					return nil
 				}
 
+				writeAppConfigCallCount := 0
+				importCommand.writeAppConfigToFile = func(dest string, app models.AppInstanceData) error {
+					writeAppConfigCallCount++
+					return nil
+				}
+
 				exitCode := importCommand.Run(tc.Args)
 				u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
 
@@ -117,12 +126,11 @@ func TestImportNewApp(t *testing.T) {
 				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "New app created: my-test-app-abcdef")
 				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "Successfully imported 'my-test-app-abcdef'")
 
-				// should export twice: once after app creation, and once after import
 				mockClient := importCommand.stitchClient.(*u.MockStitchClient)
-				u.So(t, mockClient.ExportFnCalls, gc.ShouldHaveLength, 2)
+				u.So(t, mockClient.ExportFnCalls, gc.ShouldHaveLength, 1)
 
-				// should write contents to directory twice: once after app creation, once after import
-				u.So(t, writeToDirectoryCallCount, gc.ShouldEqual, 2)
+				u.So(t, writeToDirectoryCallCount, gc.ShouldEqual, 1)
+				u.So(t, writeAppConfigCallCount, gc.ShouldEqual, 1)
 			})
 		}
 	})

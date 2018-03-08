@@ -48,6 +48,9 @@ func NewImportCommandFactory(ui cli.Ui) cli.CommandFactory {
 			},
 			workingDirectory: workingDirectory,
 			writeToDirectory: utils.WriteZipToDir,
+			writeAppConfigToFile: func(dest string, app models.AppInstanceData) error {
+				return app.MarshalFile(dest)
+			},
 		}, nil
 	}
 }
@@ -56,8 +59,9 @@ func NewImportCommandFactory(ui cli.Ui) cli.CommandFactory {
 type ImportCommand struct {
 	*BaseCommand
 
-	writeToDirectory func(dest string, zipData io.Reader, overwrite bool) error
-	workingDirectory string
+	writeToDirectory     func(dest string, zipData io.Reader, overwrite bool) error
+	writeAppConfigToFile func(dest string, app models.AppInstanceData) error
+	workingDirectory     string
 
 	flagAppID    string
 	flagAppPath  string
@@ -161,13 +165,13 @@ func (ic *ImportCommand) importApp() error {
 		return err
 	}
 
-	app, err := stitchClient.FetchAppByClientAppID(appInstanceData.AppID)
+	app, err := stitchClient.FetchAppByClientAppID(appInstanceData.AppID())
 	var appNotFound bool
 	if err != nil {
 		switch err.(type) {
 		case api.ErrAppNotFound:
 			appNotFound = true
-			if appInstanceData.AppID == "" {
+			if appInstanceData.AppID() == "" {
 				err = errors.New("this app does not exist yet")
 			}
 		default:
@@ -182,7 +186,7 @@ func (ic *ImportCommand) importApp() error {
 		ic.flagStrategy = importStrategyReplace
 
 		var wantedNewApp bool
-		app, wantedNewApp, err = ic.askCreateEmptyApp(err.Error(), appInstanceData.AppName, stitchClient)
+		app, wantedNewApp, err = ic.askCreateEmptyApp(err.Error(), appInstanceData.AppName(), stitchClient)
 		if err != nil {
 			return err
 		}
@@ -190,15 +194,10 @@ func (ic *ImportCommand) importApp() error {
 			return nil
 		}
 
-		// re-fetch created app to sync name and client app ID
-		_, body, err := stitchClient.Export(app.GroupID, app.ID)
-		if err != nil {
-			return errCreateAppSyncFailure(err)
-		}
+		appInstanceData[models.AppIDField] = app.ClientAppID
+		appInstanceData[models.AppNameField] = app.Name
 
-		defer body.Close()
-
-		if err := ic.writeToDirectory(appPath, body, true); err != nil {
+		if err := ic.writeAppConfigToFile(appPath, appInstanceData); err != nil {
 			return errCreateAppSyncFailure(err)
 		}
 	}
@@ -309,37 +308,25 @@ func (ic *ImportCommand) resolveAppDirectory() (string, error) {
 	return utils.GetDirectoryContainingFile(ic.workingDirectory, models.AppConfigFileName)
 }
 
-// resolveAppInstanceData loads data for an app from a .stitch file located in the provided directory path
-func (ic *ImportCommand) resolveAppInstanceData(path string) (*models.AppInstanceData, error) {
-	appInstanceData := &models.AppInstanceData{
-		AppID: ic.flagAppID,
-	}
-
-	if appInstanceData.AppID == "" {
-		if err := mergeAppInstanceDataFromPath(appInstanceData, path); err != nil {
-			return nil, err
-		}
-	}
-
-	return appInstanceData, nil
-}
-
-func mergeAppInstanceDataFromPath(appInstanceData *models.AppInstanceData, path string) error {
-	var appInstanceDataFromDotfile models.AppInstanceData
-	err := appInstanceDataFromDotfile.UnmarshalFile(path)
+// resolveAppInstanceData loads data for an app from a stitch.json file located in the provided directory path,
+// merging in any overridden parameters from command line flags
+func (ic *ImportCommand) resolveAppInstanceData(path string) (models.AppInstanceData, error) {
+	var appInstanceDataFromFile models.AppInstanceData
+	err := appInstanceDataFromFile.UnmarshalFile(path)
 
 	if os.IsNotExist(err) {
-		return nil
+		return models.AppInstanceData{
+			models.AppIDField: ic.flagAppID,
+		}, nil
 	}
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if appInstanceData.AppID == "" {
-		appInstanceData.AppID = appInstanceDataFromDotfile.AppID
-		appInstanceData.AppName = appInstanceDataFromDotfile.AppName
+	if ic.flagAppID != "" {
+		appInstanceDataFromFile[models.AppIDField] = ic.flagAppID
 	}
 
-	return nil
+	return appInstanceDataFromFile, nil
 }
