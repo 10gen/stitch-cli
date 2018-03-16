@@ -13,7 +13,7 @@ import (
 	"github.com/10gen/stitch-cli/utils"
 
 	"github.com/mitchellh/cli"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	flag "github.com/ogier/pflag"
 )
 
