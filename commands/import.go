@@ -13,7 +13,7 @@ import (
 	"github.com/10gen/stitch-cli/utils"
 
 	"github.com/mitchellh/cli"
-	"github.com/mitchellh/go-homedir"
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 const (

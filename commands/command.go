@@ -13,7 +13,7 @@ import (
 	"github.com/10gen/stitch-cli/utils"
 
 	"github.com/mitchellh/cli"
-	"github.com/mitchellh/go-homedir"
+	homedir "github.com/mitchellh/go-homedir"
 	flag "github.com/ogier/pflag"
 )
 
@@ -228,7 +228,7 @@ func (c *BaseCommand) Ask(query string, defaultVal string) (string, error) {
 		var answer string
 
 		if len(res) > 0 {
-			answer = strings.TrimSpace(strings.ToLower(res))
+			answer = strings.TrimSpace(res)
 		}
 
 		if answer == "" && defaultVal != "" {
