@@ -3,6 +3,7 @@
 package commands
 
 import (
+	"flag"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/mitchellh/cli"
 	"github.com/mitchellh/go-homedir"
-	flag "github.com/ogier/pflag"
 )
 
 const (
@@ -46,12 +46,12 @@ type BaseCommand struct {
 
 // NewFlagSet builds and returns the default set of flags for all commands
 func (c *BaseCommand) NewFlagSet() *flag.FlagSet {
-	set := flag.NewFlagSet(c.Name, flag.ContinueOnError)
-	set.SetInterspersed(true)
+	set := flag.NewFlagSet(c.Name, flag.ExitOnError)
 	set.Usage = func() {}
 
 	set.BoolVar(&c.flagColorEnabled, "color", true, "")
-	set.BoolVarP(&c.flagYes, "yes", "y", false, "")
+	set.BoolVar(&c.flagYes, "yes", false, "")
+	set.BoolVar(&c.flagYes, "y", false, "")
 	set.StringVar(&c.flagBaseURL, "base-url", api.DefaultBaseURL, "")
 	set.StringVar(&c.flagConfigPath, "config-path", "", "")
 
@@ -144,9 +144,9 @@ func (c *BaseCommand) run(args []string) error {
 		c.NewFlagSet()
 	}
 
-	if err := c.Parse(args); err != nil {
-		return err
-	}
+	// FlagSet uses flag.ExitOnError, so we let it handle flag-related errors
+	// to avoid duplicate error output
+	c.Parse(args)
 
 	if url := utils.CheckForNewCLIVersion(); url != "" {
 		c.UI.Info(url)
