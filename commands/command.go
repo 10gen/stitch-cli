@@ -260,8 +260,8 @@ func (c *BaseCommand) Help() string {
   --config-path [string]
 	File to write user configuration data to (defaults to ~/.config/stitch/stitch)
 
-  --color=[boolean]
-	Use colors or not. Defaults to true. Set to false if you do not want color
+  --disable-color
+	Disable the use of colors in terminal output.
 
   -y, --yes 
 	Bypass prompts. Provide this parameter if you do not want to be prompted for input.`
