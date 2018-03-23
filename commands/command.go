@@ -5,6 +5,7 @@ package commands
 import (
 	"flag"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/10gen/stitch-cli/user"
 	"github.com/10gen/stitch-cli/utils"
 
+	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/cli"
 	"github.com/mitchellh/go-homedir"
 )
@@ -38,10 +40,10 @@ type BaseCommand struct {
 	user         *user.User
 	storage      *storage.Storage
 
-	flagConfigPath   string
-	flagColorEnabled bool
-	flagBaseURL      string
-	flagYes          bool
+	flagConfigPath    string
+	flagColorDisabled bool
+	flagBaseURL       string
+	flagYes           bool
 }
 
 // NewFlagSet builds and returns the default set of flags for all commands
@@ -49,7 +51,7 @@ func (c *BaseCommand) NewFlagSet() *flag.FlagSet {
 	set := flag.NewFlagSet(c.Name, flag.ExitOnError)
 	set.Usage = func() {}
 
-	set.BoolVar(&c.flagColorEnabled, "color", true, "")
+	set.BoolVar(&c.flagColorDisabled, "disable-color", false, "")
 	set.BoolVar(&c.flagYes, "yes", false, "")
 	set.BoolVar(&c.flagYes, "y", false, "")
 	set.StringVar(&c.flagBaseURL, "base-url", api.DefaultBaseURL, "")
@@ -147,6 +149,14 @@ func (c *BaseCommand) run(args []string) error {
 	// FlagSet uses flag.ExitOnError, so we let it handle flag-related errors
 	// to avoid duplicate error output
 	c.Parse(args)
+
+	if !c.flagColorDisabled && isatty.IsTerminal(os.Stdout.Fd()) {
+		c.UI = &cli.ColoredUi{
+			ErrorColor: cli.UiColorRed,
+			WarnColor:  cli.UiColorYellow,
+			Ui:         c.UI,
+		}
+	}
 
 	if url := utils.CheckForNewCLIVersion(); url != "" {
 		c.UI.Info(url)
@@ -250,8 +260,8 @@ func (c *BaseCommand) Help() string {
   --config-path [string]
 	File to write user configuration data to (defaults to ~/.config/stitch/stitch)
 
-  --color [boolean]
-	Use colors or not. Set to false if you do not want color
+  --color=[boolean]
+	Use colors or not. Defaults to true. Set to false if you do not want color
 
   -y, --yes 
 	Bypass prompts. Provide this parameter if you do not want to be prompted for input.`
