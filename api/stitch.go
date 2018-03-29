@@ -104,7 +104,6 @@ type basicStitchClient struct {
 
 // Authenticate will authenticate a user given an api key and username
 func (sc *basicStitchClient) Authenticate(authProvider auth.AuthenticationProvider) (*auth.Response, error) {
-	fmt.Println("AUTHENTICATE")
 	body, err := json.Marshal(authProvider.Payload())
 	if err != nil {
 		return nil, err
