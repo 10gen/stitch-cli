@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/abbot/go-http-auth"
-  packages = ["."]
-  revision = "0ddd408d5d60ea76e320503cc7dd091992dee608"
-  version = "v0.4.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/armon/go-radix"
   packages = ["."]
@@ -18,12 +12,6 @@
   packages = ["."]
   revision = "4aabc24848ce5fd31929f7d1e4ea74d3709c14cd"
   version = "v0.1.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/edaniels/digest"
-  packages = ["."]
-  revision = "b81e9c4ee11c4b776544857d87b71c116643486a"
 
 [[projects]]
   branch = "master"
@@ -99,32 +87,6 @@
   version = "1.6.3"
 
 [[projects]]
-  name = "goji.io"
-  packages = [
-    ".",
-    "internal",
-    "pat",
-    "pattern"
-  ]
-  revision = "0d89ff54b2c18c9c4ba530e32496aef902d3c6cd"
-  version = "v2.0"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/crypto"
-  packages = [
-    "bcrypt",
-    "blowfish"
-  ]
-  revision = "88942b9c40a4c9d203b82b3731787b672d6e809b"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/net"
-  packages = ["context"]
-  revision = "6078986fec03a1dcc236c34816c71b0e05018fda"
-
-[[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
@@ -148,6 +110,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3ec4433d3eb7f1adacb73ae7b760dee2d187de067ee0bcd3973cf3d0daa5e779"
+  inputs-digest = "5de55588dd7e89ef8ec38c7f3ce5ef4f92c62eaa2cfda91accd5f3709fcee4af"
   solver-name = "gps-cdcl"
   solver-version = 1

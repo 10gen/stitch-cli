@@ -2,14 +2,14 @@ package commands
 
 import (
 	"net/http"
-	"os/exec"
+	// "os/exec"
 	"strings"
 	"testing"
 
 	"github.com/10gen/stitch-cli/auth"
 	"github.com/10gen/stitch-cli/user"
 	u "github.com/10gen/stitch-cli/utils/test"
-	"github.com/10gen/stitch-cli/utils/test/harness"
+	// "github.com/10gen/stitch-cli/utils/test/harness"
 	gc "github.com/smartystreets/goconvey/convey"
 
 	"github.com/mitchellh/cli"
@@ -177,33 +177,4 @@ func TestLoginCommand(t *testing.T) {
 			u.So(t, loginCommand.user, gc.ShouldResemble, validUser)
 		})
 	})
-}
-
-func TestCloudLoginCommand(t *testing.T) {
-	u.SkipUnlessMongoDBCloudRunning(t)
-
-	cloudClient := harness.NewCloudPrivateAPIClient(t)
-
-	// Create the user once
-	if err := cloudClient.RegisterUser(); err != nil {
-		t.Log(err)
-		t.FailNow()
-	}
-	if err := cloudClient.CreateGroup(harness.PlanTypeNDS); err != nil {
-		t.Log(err)
-		t.FailNow()
-	}
-
-	_, apiKey, err := cloudClient.CreateAPIKey()
-	if err != nil {
-		t.Log(err)
-		t.FailNow()
-	}
-
-	args := []string{"run", "../main.go", "login", "--config-path", "../cli_conf", "--base-url", "http://localhost:9090", "--username", cloudClient.Username(), "--api-key", apiKey}
-	err = exec.Command("go", args...).Run()
-	u.So(t, err, gc.ShouldBeNil)
-
-	err = exec.Command("ls", "../cli_conf").Run()
-	u.So(t, err, gc.ShouldBeNil)
 }
