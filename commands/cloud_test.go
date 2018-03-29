@@ -53,8 +53,6 @@ func TestCloudCommands(t *testing.T) {
 		"http://localhost:9090",
 		"--path",
 		"../testdata/simple_app_with_instance_data",
-		"--strategy",
-		"replace",
 		"--project-id",
 		cloudClient.GroupID(),
 		"--yes",
