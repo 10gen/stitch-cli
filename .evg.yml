@@ -67,7 +67,7 @@ functions:
           cd $GOPATH/src/github.com/10gen/stitch
           export PATH="$GOPATH/src/github.com/10gen/stitch/etc/transpiler/bin:$PATH"
           which transpiler
-          go run cmd/server/main.go --configFile $GOPATH/../src/github.com/10gen/stitch-cli/stitch_test_config.json
+          go run cmd/server/main.go --configFile $GOPATH/../src/github.com/10gen/stitch-cli/testdata/configs/stitch_server_test_config.json
     - command: shell.exec
       params:
         script: |
