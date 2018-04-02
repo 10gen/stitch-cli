@@ -12,6 +12,7 @@ import (
 
 func TestCloudCommands(t *testing.T) {
 	u.SkipUnlessMongoDBCloudRunning(t)
+	serverBaseURL := u.StitchServerBaseURL()
 
 	// setup cloud
 	cloudClient := harness.NewCloudPrivateAPIClient(t)
@@ -30,7 +31,7 @@ func TestCloudCommands(t *testing.T) {
 		"--config-path",
 		"../cli_conf",
 		"--base-url",
-		"http://localhost:9090",
+		serverBaseURL,
 		"--username",
 		cloudClient.Username(),
 		"--api-key",
@@ -50,9 +51,9 @@ func TestCloudCommands(t *testing.T) {
 		"--config-path",
 		"../cli_conf",
 		"--base-url",
-		"http://localhost:9090",
+		serverBaseURL,
 		"--path",
-		"../testdata/simple_app_with_instance_data",
+		"../testdata/simple_app",
 		"--project-id",
 		cloudClient.GroupID(),
 		"--yes",
@@ -70,7 +71,7 @@ func TestCloudCommands(t *testing.T) {
 		"--config-path",
 		"../cli_conf",
 		"--base-url",
-		"http://localhost:9090",
+		serverBaseURL,
 		"--app-id",
 		appID,
 		"-o",
@@ -79,7 +80,9 @@ func TestCloudCommands(t *testing.T) {
 	}
 	err = exec.Command("go", exportArgs...).Run()
 	u.So(t, err, gc.ShouldBeNil)
-	err = exec.Command("ls", "../exported_app/stitch.json").Run()
-	u.So(t, err, gc.ShouldBeNil)
+	out, _ = exec.Command("cat", "../exported_app/stitch.json").Output()
+	u.So(t, string(out), gc.ShouldContainSubstring, "\"app_id\":")
+	out, _ = exec.Command("diff", "../testdata/simple_app/stitch.json", "../exported_app/stitch.json").Output()
+	u.So(t, out, gc.ShouldHaveLength, 0)
 
 }

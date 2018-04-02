@@ -25,6 +25,7 @@ import (
 
 const (
 	defaultMongoDBCloudPrivateAPIBaseURL = "http://localhost:9090"
+	defaultStitchServerBaseURL           = "http://localhost:9090"
 )
 
 // Assertion is a func that checks some condition for use in a test
@@ -269,6 +270,14 @@ func MongoDBCloudPrivateAPIBaseURL() string {
 		return url
 	}
 	return defaultMongoDBCloudPrivateAPIBaseURL
+}
+
+// StitchServerBaseURL returns the base URL to use for testing with the Stitch Server
+func StitchServerBaseURL() string {
+	if url := os.Getenv("STITCH_SERVER_BASE_URL"); url != "" {
+		return url
+	}
+	return defaultStitchServerBaseURL
 }
 
 var mongoDBCloudNotRunning = false

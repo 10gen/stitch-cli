@@ -14,9 +14,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/10gen/stitch-cli/utils"
 	"github.com/10gen/stitch-cli/utils/test"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
 // CloudPrivateAPIClient is a client for interacting with MongoDB Cloud's
@@ -126,7 +125,7 @@ func (client *CloudPrivateAPIClient) PostForm(url string, form url.Values) (*htt
 
 // RegisterUser registers a new user and associates it with this client
 func (client *CloudPrivateAPIClient) RegisterUser() error {
-	username := fmt.Sprintf("test-%s@domain.com", bson.NewObjectId().Hex())
+	username := fmt.Sprintf("test-%s@domain.com", utils.RandomAlphaNumericString(12))
 	password := "PassWord101#"
 	registerPayload := map[string]interface{}{
 		"username":          username,
@@ -187,7 +186,7 @@ var planTypeToString = map[PlanType]string{
 func (client *CloudPrivateAPIClient) CreateGroup(
 	planType PlanType, // nolint: interfacer
 ) error {
-	groupName := fmt.Sprintf("test-%s", bson.NewObjectId().Hex())
+	groupName := fmt.Sprintf("test-%s", utils.RandomAlphaNumericString(12))
 
 	form := url.Values{}
 	form.Add("company", groupName)
@@ -271,7 +270,7 @@ func (client *CloudPrivateAPIClient) CreateAPIKey() (string, string, error) {
 	}
 
 	form := url.Values{}
-	form.Add("desc", bson.NewObjectId().Hex())
+	form.Add("desc", utils.RandomAlphaNumericString(12))
 
 	resp, err := client.PostForm("/settings/addPublicApiKey", form)
 	if err != nil {
