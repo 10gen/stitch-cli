@@ -1,12 +1,14 @@
 package commands
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 	"testing"
 
 	u "github.com/10gen/stitch-cli/utils/test"
 	"github.com/10gen/stitch-cli/utils/test/harness"
+	"github.com/10gen/stitch-cli/utils/test/mdbcloud"
 	gc "github.com/smartystreets/goconvey/convey"
 )
 
@@ -38,7 +40,8 @@ func TestCloudCommands(t *testing.T) {
 		apiKey,
 	}
 
-	err = exec.Command("go", loginArgs...).Run()
+	out, err := exec.Command("go", loginArgs...).CombinedOutput()
+	fmt.Println(">>>>>>>>>", string(out))
 	u.So(t, err, gc.ShouldBeNil)
 	err = exec.Command("ls", "../cli_conf").Run()
 	u.So(t, err, gc.ShouldBeNil)
@@ -58,7 +61,7 @@ func TestCloudCommands(t *testing.T) {
 		cloudClient.GroupID(),
 		"--yes",
 	}
-	out, err := exec.Command("go", importArgs...).Output()
+	out, err = exec.Command("go", importArgs...).Output()
 	u.So(t, err, gc.ShouldBeNil)
 
 	// test export
@@ -84,5 +87,31 @@ func TestCloudCommands(t *testing.T) {
 	u.So(t, string(out), gc.ShouldContainSubstring, "\"app_id\":")
 	out, _ = exec.Command("diff", "../testdata/simple_app/stitch.json", "../exported_app/stitch.json").Output()
 	u.So(t, out, gc.ShouldHaveLength, 0)
+
+}
+
+func TestCloubCommands(t *testing.T) {
+	u.SkipUnlessMongoDBCloudRunning(t)
+	// serverBaseURL := u.StitchServerBaseURL()
+
+	// setup cloud
+	cloudClient := harness.NewCloudPrivateAPIClient(t)
+	err := cloudClient.RegisterUser()
+	u.So(t, err, gc.ShouldBeNil)
+	err = cloudClient.CreateGroup(harness.PlanTypeNDS)
+	u.So(t, err, gc.ShouldBeNil)
+	_, apiKey, err := cloudClient.CreateAPIKey()
+	u.So(t, err, gc.ShouldBeNil)
+
+	atlasClient := mdbcloud.NewClient(u.MongoDBCloudPublicAPIBaseURL(), u.MongoDBCloudAtlasAPIBaseURL()).WithAuth(cloudClient.Username(), apiKey)
+	usr, err := atlasClient.Self()
+	fmt.Printf(">>>>>>>> usr: %#v err: %#v\n", usr, err)
+
+	fmt.Println(">>>>>>>> creating cluster with groupID:", cloudClient.GroupID())
+	group, err := atlasClient.CreateAtlasCluster(cloudClient.GroupID(), "somebs")
+	fmt.Printf(">>>>>>>> CreateCluster group: %#v err: %#v\n", group, err)
+
+	err = atlasClient.DeleteAtlasCluster(cloudClient.GroupID(), "somebs")
+	fmt.Printf(">>>>>>>> DeleteCluster err: %#v\n", err)
 
 }

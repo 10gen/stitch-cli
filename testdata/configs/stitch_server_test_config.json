@@ -22,8 +22,8 @@
         "name": "mongodb-cloud",
         "type": "mongodb-cloud",
         "config": {
-          "publicAPIBaseUrl": "https://cloud-dev.mongodb.com/api/public/v1.0",
-          "atlasAPIBaseUrl": "https://cloud-dev.mongodb.com/api/atlas/v1.0"
+          "publicAPIBaseUrl": "https://cloud-qa.mongodb.com/api/public/v1.0",
+          "atlasAPIBaseUrl": "https://cloud-qa.mongodb.com/api/atlas/v1.0"
         },
         "metadataFields": [{ "name": "name", "required": false}]
       }
