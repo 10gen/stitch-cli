@@ -9,11 +9,12 @@ import (
 	"net/http"
 	"time"
 
-	// "github.com/10gen/stitch/common"
 	"github.com/10gen/stitch-cli/utils"
 
 	"github.com/edaniels/digest"
 )
+
+var commonServerErr = fmt.Errorf("An unexpected server error has occurred")
 
 // Client provides access to the MongoDB Cloud Manager APIs
 type Client interface {
@@ -40,12 +41,14 @@ type Client interface {
 	// AtlasCluster returns the cluster with the given name unless it cannot be found
 	AtlasCluster(groupID string, clusterName string) (*AtlasCluster, error)
 
-	// CreateAtlasCluster is a wip
-	CreateAtlasCluster(groupID, clusterName string) (*AtlasCluster, error)
+	// CreateAtlasCluster creates a cluster with the given configuration
+	CreateAtlasCluster(groupID string, cluster CreateAtlasCluster) error
 
-	// DeleteAtlasCluster attempts to delete the cluster with the given name inside
-	// the group specified
+	// DeleteAtlasCluster deletes the cluster with the given name under the group specified
 	DeleteAtlasCluster(groupID, clusterName string) error
+
+	// AtlasIPWhitelistEntries returns information about the group's IP Whitelist
+	AtlasIPWhitelistEntries(groupID string) (*AtlasIPWhitelistGetResponse, error)
 
 	// AddAtlasIPWhitelistEntries adds the given entries to the group's IP Whitelist
 	AddAtlasIPWhitelistEntries(groupID string, entries ...AtlasIPWhitelistEntry) error
@@ -65,8 +68,6 @@ type simpleClient struct {
 	publicAPIBaseURL string
 	atlasAPIBaseURL  string
 }
-
-var commonServerErr = fmt.Errorf("SERVER ERROR!")
 
 // NewClient constructs and returns a new Client given a username, API key,
 // the public Cloud API base URL, and the atlas API base url
@@ -101,7 +102,6 @@ func (client *simpleClient) do(
 	req, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
 		return nil, commonServerErr
-		// return nil, ErrInternalServerError
 	}
 
 	if body != nil {
@@ -123,16 +123,11 @@ func (client *simpleClient) do(
 	resp, err := cl.Do(req)
 	if err != nil {
 		return nil, commonServerErr
-		// return nil, ErrInternalServerError
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		resp.Body.Close()
 		return nil, fmt.Errorf("failed to authenticate with MongoDB Cloud API")
-		// return nil, common.NewErrRequest(
-		// 	"failed to authenticate with MongoDB Cloud API",
-		// 	common.ErrCodeInvalidSession,
-		// )
 	}
 
 	return resp, nil
@@ -279,49 +274,26 @@ func (client *simpleClient) AtlasCluster(groupID string, clusterName string) (*A
 	return &cluster, nil
 }
 
-func (client *simpleClient) CreateAtlasCluster(groupID, clusterName string) (*AtlasCluster, error) {
-	fmt.Println(fmt.Sprintf("%s/groups/%s/clusters",
-		client.atlasAPIBaseURL,
-		groupID,
-	))
+func (client *simpleClient) CreateAtlasCluster(groupID string, cluster CreateAtlasCluster) error {
 	resp, err := client.do(
 		http.MethodPost,
 		fmt.Sprintf("%s/groups/%s/clusters",
 			client.atlasAPIBaseURL,
 			groupID,
 		),
-		AtlasCluster{
-			Name: "test",
-			ProviderSettings: ProviderSettings{
-				ProviderName: "AWS",
-				RegionName:   "US_EAST_1",
-				InstanceSize: "M10",
-			},
-		},
+		cluster,
 		true,
 	)
-	fmt.Printf(">>>>> createCluster resp: %#v \n", resp)
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(resp.Body)
-	newStr := buf.String()
-	fmt.Printf(">>>>> createCluster resp body: %#v \n", newStr)
-
 	if err != nil {
-		return nil, err
+		return err
 	}
+
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error finding cluster '%s'", clusterName)
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("error creating cluster '%s'", cluster.Name)
 	}
 
-	dec := json.NewDecoder(resp.Body)
-	var cluster AtlasCluster
-	if err := dec.Decode(&cluster); err != nil {
-		return nil, err
-	}
-
-	return &cluster, nil
+	return nil
 }
 
 func (client *simpleClient) DeleteAtlasCluster(groupID, clusterName string) error {
@@ -338,9 +310,40 @@ func (client *simpleClient) DeleteAtlasCluster(groupID, clusterName string) erro
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-	return nil
 
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusAccepted {
+		return fmt.Errorf("error deleting cluster '%s'", clusterName)
+	}
+	return nil
+}
+
+func (client *simpleClient) AtlasIPWhitelistEntries(groupID string) (*AtlasIPWhitelistGetResponse, error) {
+	resp, err := client.do(
+		http.MethodGet,
+		fmt.Sprintf("%s/groups/%s/whitelist",
+			client.atlasAPIBaseURL,
+			groupID,
+		),
+		nil,
+		true,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("error finding IP whitelist entries: %v", resp.Status)
+	}
+
+	dec := json.NewDecoder(resp.Body)
+	var whitelistResponse AtlasIPWhitelistGetResponse
+	if err := dec.Decode(&whitelistResponse); err != nil {
+		return nil, err
+	}
+
+	return &whitelistResponse, nil
 }
 
 func (client *simpleClient) AddAtlasIPWhitelistEntries(

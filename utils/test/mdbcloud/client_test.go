@@ -6,8 +6,6 @@ import (
 	"reflect"
 	"testing"
 
-	// "github.com/10gen/stitch/common"
-
 	gc "github.com/smartystreets/goconvey/convey"
 )
 
@@ -29,8 +27,7 @@ func TestClientRoot(t *testing.T) {
 		gc.Convey("Failing to auth should fail", func() {
 			_, err := client.WithAuth("username", "apiKey").Root()
 			gc.So(err, gc.ShouldNotBeNil)
-			// gc.So(err, gc.ShouldHaveSameTypeAs, common.NewErrRequest("", ""))
-			// gc.So(err.(common.ErrRequest).ErrorCode(), gc.ShouldEqual, common.ErrCodeInvalidSession)
+			gc.So(err, gc.ShouldResemble, commonServerErr)
 		})
 
 		gc.Convey("Valid response should work", func() {
@@ -43,7 +40,6 @@ func TestClientRoot(t *testing.T) {
 			*(mockServer.rootFunc) = func(w http.ResponseWriter, r *http.Request) {}
 			_, err := authedClient.Root()
 			gc.So(err, gc.ShouldNotBeNil)
-			// gc.So(err, gc.ShouldNotHaveSameTypeAs, common.NewErrRequest("", ""))
 		})
 	})
 }

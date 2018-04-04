@@ -126,7 +126,7 @@ tasks:
             export STITCH_MONGODB_CLOUD_PUBLIC_API_BASE_URL="${mongoDBCloudURL}/api/public/v1.0"
             export STITCH_MONGODB_CLOUD_ATLAS_API_BASE_URL="${mongoDBCloudURL}/api/atlas/v1.0"
             export STITCH_SERVER_BASE_URL="${stitchServerURL}"
-            go test -v $(go list github.com/10gen/stitch-cli/${cloud_dependent_pkg}/...) -run TestCloub > $GOPATH/stitch-cli.suite
+            go test -v $(go list github.com/10gen/stitch-cli/${cloud_dependent_pkg}/...) -run TestCloud > $GOPATH/stitch-cli.suite
 
   - name: gometalinter
     commands:
@@ -252,8 +252,7 @@ buildvariants:
     transpiler_target: node8-linux
     mongodb_url: https://downloads.mongodb.com/linux/mongodb-linux-x86_64-enterprise-rhel70-3.4.6.tgz
     libmongo_url: https://s3.amazonaws.com/stitch-artifacts/stitch-mongo-libs/stitch_mongo_libs_linux_64_patch_1f02b06ec6fd48bad0b725b77bc194c84f839f53_5ab7216fc9ec44724e08f194_18_03_25_04_11_28/libmongo.so
-    # mongoDBCloudURL: https://cloud-dev.mongodb.com
-    mongoDBCloudURL: https://cloud-qa.mongodb.com
+    mongoDBCloudURL: https://cloud-dev.mongodb.com
     stitchServerURL: http://localhost:9090
   tasks:
   - name: github_pull_request_start
