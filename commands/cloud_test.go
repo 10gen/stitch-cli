@@ -98,6 +98,7 @@ func TestCloudCommands(t *testing.T) {
 
 	// check Atlas whitelist for Stitch entry
 	whitelistResponse, err := atlasClient.AtlasIPWhitelistEntries(groupID)
+	u.So(t, err, gc.ShouldBeNil)
 	hasStitchIP := false
 	for _, whitelistEntry := range whitelistResponse.Results {
 		if strings.Contains(whitelistEntry.Comment, "For MongoDB Stitch; do not delete") {

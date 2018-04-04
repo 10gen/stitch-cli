@@ -2,6 +2,7 @@ package mdbcloud
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
@@ -27,7 +28,7 @@ func TestClientRoot(t *testing.T) {
 		gc.Convey("Failing to auth should fail", func() {
 			_, err := client.WithAuth("username", "apiKey").Root()
 			gc.So(err, gc.ShouldNotBeNil)
-			gc.So(err, gc.ShouldResemble, commonServerErr)
+			gc.So(err, gc.ShouldResemble, fmt.Errorf("failed to authenticate with MongoDB Cloud API"))
 		})
 
 		gc.Convey("Valid response should work", func() {

@@ -14,7 +14,7 @@ import (
 	"github.com/edaniels/digest"
 )
 
-var commonServerErr = fmt.Errorf("An unexpected server error has occurred")
+var errCommonServerError = fmt.Errorf("an unexpected server error has occurred")
 
 // Client provides access to the MongoDB Cloud Manager APIs
 type Client interface {
@@ -101,7 +101,7 @@ func (client *simpleClient) do(
 
 	req, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
-		return nil, commonServerErr
+		return nil, errCommonServerError
 	}
 
 	if body != nil {
@@ -122,7 +122,7 @@ func (client *simpleClient) do(
 
 	resp, err := cl.Do(req)
 	if err != nil {
-		return nil, commonServerErr
+		return nil, errCommonServerError
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
