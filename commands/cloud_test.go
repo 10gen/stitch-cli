@@ -66,7 +66,7 @@ func TestCloudCommands(t *testing.T) {
 
 	t.Logf("Waiting for cluster to deploy")
 	time.Sleep(5 * time.Minute)
-	for i := 0; i < 8; i++ {
+	for i := 0; i < 17; i++ {
 		cluster, err := atlasClient.AtlasCluster(groupID, "testCluster")
 		u.So(t, err, gc.ShouldBeNil)
 
@@ -74,7 +74,7 @@ func TestCloudCommands(t *testing.T) {
 		if cluster.StateName != "CREATING" {
 			break
 		}
-		time.Sleep(1 * time.Minute)
+		time.Sleep(30 * time.Second)
 	}
 	t.Logf("Cluster finished deploying")
 
