@@ -24,17 +24,15 @@ type Client interface {
 }
 
 type simpleClient struct {
-	transport        *digest.Transport
-	publicAPIBaseURL string
-	atlasAPIBaseURL  string
+	transport       *digest.Transport
+	atlasAPIBaseURL string
 }
 
 // NewClient constructs and returns a new Client given a username, API key,
 // the public Cloud API base URL, and the atlas API base url
-func NewClient(publicAPIBaseURL, atlasAPIBaseURL string) Client {
+func NewClient(atlasAPIBaseURL string) Client {
 	return &simpleClient{
-		publicAPIBaseURL: publicAPIBaseURL,
-		atlasAPIBaseURL:  atlasAPIBaseURL,
+		atlasAPIBaseURL: atlasAPIBaseURL,
 	}
 }
 

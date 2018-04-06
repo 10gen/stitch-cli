@@ -26,7 +26,6 @@ import (
 const (
 	defaultMongoDBCloudPrivateAPIBaseURL = "http://localhost:9090"
 	defaultStitchServerBaseURL           = "http://localhost:9090"
-	defaultMongoDBCloudPublicAPIBaseURL  = "http://localhost:9090/api/public/v1.0"
 	defaultMongoDBCloudAtlasAPIBaseURL   = "http://localhost:9090/api/atlas/v1.0"
 )
 
@@ -281,15 +280,6 @@ func MongoDBCloudAtlasAPIBaseURL() string {
 		return url
 	}
 	return defaultMongoDBCloudAtlasAPIBaseURL
-}
-
-// MongoDBCloudPublicAPIBaseURL returns the base URL to use for testing
-// the MongoDB Cloud Admin API
-func MongoDBCloudPublicAPIBaseURL() string {
-	if url := os.Getenv("STITCH_MONGODB_CLOUD_PUBLIC_API_BASE_URL"); url != "" {
-		return url
-	}
-	return defaultMongoDBCloudPublicAPIBaseURL
 }
 
 // MongoDBCloudAPIKey returns a valid API key for use against the cloud environment

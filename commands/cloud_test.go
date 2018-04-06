@@ -72,7 +72,7 @@ func TestCloudCommands(t *testing.T) {
 	err = exec.Command("go", exportArgs...).Run()
 	u.So(t, err, gc.ShouldBeNil)
 
-	atlasClient := mdbcloud.NewClient(u.MongoDBCloudPublicAPIBaseURL(), u.MongoDBCloudAtlasAPIBaseURL()).
+	atlasClient := mdbcloud.NewClient(u.MongoDBCloudAtlasAPIBaseURL()).
 		WithAuth(u.MongoDBCloudUsername(), u.MongoDBCloudAPIKey())
 
 	defer atlasClient.DeleteDatabaseUser(u.MongoDBCloudGroupID(), "mongodb-stitch-"+appID)
