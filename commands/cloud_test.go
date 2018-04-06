@@ -12,7 +12,7 @@ import (
 
 func TestCloudCommands(t *testing.T) {
 	u.SkipUnlessMongoDBCloudRunning(t)
-	serverBaseURL := u.StitchServerBaseURL()
+	cloudEnv := u.ENV()
 
 	// test login
 	loginArgs := []string{
@@ -22,11 +22,11 @@ func TestCloudCommands(t *testing.T) {
 		"--config-path",
 		"../cli_conf",
 		"--base-url",
-		serverBaseURL,
+		cloudEnv.StitchServerBaseURL,
 		"--username",
-		u.MongoDBCloudUsername(),
+		cloudEnv.Username,
 		"--api-key",
-		u.MongoDBCloudAPIKey(),
+		cloudEnv.APIKey,
 	}
 
 	err := exec.Command("go", loginArgs...).Run()
@@ -42,11 +42,11 @@ func TestCloudCommands(t *testing.T) {
 		"--config-path",
 		"../cli_conf",
 		"--base-url",
-		serverBaseURL,
+		cloudEnv.StitchServerBaseURL,
 		"--path",
 		"../testdata/simple_app_with_cluster",
 		"--project-id",
-		u.MongoDBCloudGroupID(),
+		cloudEnv.GroupID,
 		"--yes",
 	}
 	out, err := exec.Command("go", importArgs...).Output()
@@ -55,10 +55,10 @@ func TestCloudCommands(t *testing.T) {
 	importOut := string(out)
 	appID := importOut[strings.Index(importOut, "'simple-app-")+1 : len(importOut)-2]
 
-	atlasClient := mdbcloud.NewClient(u.MongoDBCloudAtlasAPIBaseURL()).
-		WithAuth(u.MongoDBCloudUsername(), u.MongoDBCloudAPIKey())
+	atlasClient := mdbcloud.NewClient(cloudEnv.AtlasAPIBaseURL).
+		WithAuth(cloudEnv.Username, cloudEnv.APIKey)
 
-	defer atlasClient.DeleteDatabaseUser(u.MongoDBCloudGroupID(), "mongodb-stitch-"+appID)
+	defer atlasClient.DeleteDatabaseUser(cloudEnv.GroupID, "mongodb-stitch-"+appID)
 
 	// test export
 	exportArgs := []string{
@@ -68,7 +68,7 @@ func TestCloudCommands(t *testing.T) {
 		"--config-path",
 		"../cli_conf",
 		"--base-url",
-		serverBaseURL,
+		cloudEnv.StitchServerBaseURL,
 		"--app-id",
 		appID,
 		"-o",
