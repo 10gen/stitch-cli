@@ -274,6 +274,15 @@ func MongoDBCloudPrivateAPIBaseURL() string {
 	return defaultMongoDBCloudPrivateAPIBaseURL
 }
 
+// MongoDBCloudAtlasAPIBaseURL returns the base URL to use for testing
+// the MongoDB Cloud Atlas API
+func MongoDBCloudAtlasAPIBaseURL() string {
+	if url := os.Getenv("STITCH_MONGODB_CLOUD_ATLAS_API_BASE_URL"); url != "" {
+		return url
+	}
+	return defaultMongoDBCloudAtlasAPIBaseURL
+}
+
 // MongoDBCloudPublicAPIBaseURL returns the base URL to use for testing
 // the MongoDB Cloud Admin API
 func MongoDBCloudPublicAPIBaseURL() string {
@@ -283,13 +292,22 @@ func MongoDBCloudPublicAPIBaseURL() string {
 	return defaultMongoDBCloudPublicAPIBaseURL
 }
 
-// MongoDBCloudAtlasAPIBaseURL returns the base URL to use for testing
-// the MongoDB Cloud Atlas API
-func MongoDBCloudAtlasAPIBaseURL() string {
-	if url := os.Getenv("STITCH_MONGODB_CLOUD_ATLAS_API_BASE_URL"); url != "" {
-		return url
-	}
-	return defaultMongoDBCloudAtlasAPIBaseURL
+// MongoDBCloudAPIKey returns a valid API key for use against the cloud environment
+// used for testing
+func MongoDBCloudAPIKey() string {
+	return os.Getenv("STITCH_MONGODB_CLOUD_API_KEY")
+}
+
+// MongoDBCloudUsername returns a valid username for use against the cloud environment
+// used for testing
+func MongoDBCloudUsername() string {
+	return os.Getenv("STITCH_MONGODB_CLOUD_USERNAME")
+}
+
+// MongoDBCloudGroupID returns a valid GroupID for use against the cloud environment
+// used for testing
+func MongoDBCloudGroupID() string {
+	return os.Getenv("STITCH_MONGODB_CLOUD_GROUP_ID")
 }
 
 // StitchServerBaseURL returns the base URL to use for testing with the Stitch Server
