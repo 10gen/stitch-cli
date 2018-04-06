@@ -224,6 +224,9 @@ tasks:
       - name: gometalinter
         status: "*"
         variant: "linux-64"
+      - name: tests-with-cloud
+        status: "*"
+        variant: "linux-64"
     commands:
       - command: shell.exec
         params:
