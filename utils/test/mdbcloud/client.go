@@ -43,7 +43,7 @@ func (client simpleClient) WithAuth(username, apiKey string) Client {
 }
 
 func (client *simpleClient) do(
-	method, url string,
+	method, url string, // nolint: unparam
 	body interface{},
 	needAuth bool, // nolint: unparam
 ) (*http.Response, error) {
