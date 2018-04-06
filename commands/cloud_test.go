@@ -52,9 +52,15 @@ func TestCloudCommands(t *testing.T) {
 	out, err := exec.Command("go", importArgs...).Output()
 	u.So(t, err, gc.ShouldBeNil)
 
-	// test export
 	importOut := string(out)
 	appID := importOut[strings.Index(importOut, "'simple-app-")+1 : len(importOut)-2]
+
+	atlasClient := mdbcloud.NewClient(u.MongoDBCloudAtlasAPIBaseURL()).
+		WithAuth(u.MongoDBCloudUsername(), u.MongoDBCloudAPIKey())
+
+	defer atlasClient.DeleteDatabaseUser(u.MongoDBCloudGroupID(), "mongodb-stitch-"+appID)
+
+	// test export
 	exportArgs := []string{
 		"run",
 		"../main.go",
@@ -71,11 +77,6 @@ func TestCloudCommands(t *testing.T) {
 	}
 	err = exec.Command("go", exportArgs...).Run()
 	u.So(t, err, gc.ShouldBeNil)
-
-	atlasClient := mdbcloud.NewClient(u.MongoDBCloudAtlasAPIBaseURL()).
-		WithAuth(u.MongoDBCloudUsername(), u.MongoDBCloudAPIKey())
-
-	defer atlasClient.DeleteDatabaseUser(u.MongoDBCloudGroupID(), "mongodb-stitch-"+appID)
 
 	out, _ = exec.Command("cat", "../exported_app/stitch.json").Output()
 	u.So(t, string(out), gc.ShouldContainSubstring, "\"app_id\":")
