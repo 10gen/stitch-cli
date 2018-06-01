@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/10gen/stitch-cli/api/mdbcloud"
 	u "github.com/10gen/stitch-cli/utils/test"
-	"github.com/10gen/stitch-cli/utils/test/mdbcloud"
 	gc "github.com/smartystreets/goconvey/convey"
 )
 

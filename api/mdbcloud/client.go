@@ -16,10 +16,20 @@ import (
 
 var errCommonServerError = fmt.Errorf("an unexpected server error has occurred")
 
+type groupResponse struct {
+	Results []Group `json:"results"`
+}
+
+// Group represents a mongodb atlas group
+type Group struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // Client provides access to the MongoDB Cloud Manager APIs
 type Client interface {
 	WithAuth(username, apiKey string) Client
-
+	Groups() ([]Group, error)
 	DeleteDatabaseUser(groupID, username string) error
 }
 
@@ -40,6 +50,32 @@ func (client simpleClient) WithAuth(username, apiKey string) Client {
 	// digest.NewTransport will use http.DefaultTransport
 	client.transport = digest.NewTransport(username, apiKey)
 	return &client
+}
+
+// Groups returns all available Groups for the user
+func (client *simpleClient) Groups() ([]Group, error) {
+	resp, err := client.do(
+		http.MethodGet,
+		fmt.Sprintf("%s/groups", client.atlasAPIBaseURL),
+		nil,
+		true,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch available Project IDs: %s", resp.Status)
+	}
+
+	dec := json.NewDecoder(resp.Body)
+	var groupResponse groupResponse
+	if err := dec.Decode(&groupResponse); err != nil {
+		return nil, err
+	}
+
+	return groupResponse.Results, nil
 }
 
 func (client *simpleClient) do(
@@ -91,6 +127,7 @@ func (client *simpleClient) do(
 	return resp, nil
 }
 
+// DeleteDatabaseUser deletes the database user with the provided username
 func (client *simpleClient) DeleteDatabaseUser(groupID, username string) error {
 	resp, err := client.do(
 		http.MethodDelete,

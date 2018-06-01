@@ -102,9 +102,8 @@ func TestImportNewApp(t *testing.T) {
 
 				// Mock responses for prompts
 				confirmCreateApp := "y\n"
-				enterGroupID := "59dbcb07127ab4131c54e810\n"
 				enterAppName := "My-Test-app\n"
-				mockUI.InputReader = strings.NewReader(confirmCreateApp + enterGroupID + enterAppName)
+				mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName)
 				importCommand.stitchClient = &tc.StitchClient
 
 				writeToDirectoryCallCount := 0
@@ -119,7 +118,7 @@ func TestImportNewApp(t *testing.T) {
 					return nil
 				}
 
-				exitCode := importCommand.Run(tc.Args)
+				exitCode := importCommand.Run(append([]string{"--project-id=59dbcb07127ab4131c54e810"}, tc.Args...))
 				u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
 
 				u.So(t, mockUI.ErrorWriter.String(), gc.ShouldBeEmpty)
