@@ -35,7 +35,7 @@ func setUpBasicCommand() (*ImportCommand, *cli.MockUi) {
 	}
 
 	mockStitchClient := &u.MockStitchClient{
-		ExportFn: func(groupID, appID string) (string, io.ReadCloser, error) {
+		ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 			return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
 		},
 		DiffFn: func(groupID, appID string, appData []byte, strategy string) ([]string, error) {
@@ -82,7 +82,7 @@ func TestImportNewApp(t *testing.T) {
 				Args:             []string{"--path=../testdata/new_app"},
 				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
-					ExportFn: func(groupID, appID string) (string, io.ReadCloser, error) {
+					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
 					},
 					CreateEmptyAppFn: func(groupID, appName string) (*models.App, error) {
@@ -218,7 +218,7 @@ func TestImportCommand(t *testing.T) {
 				Args:             append([]string{"--path=../testdata/full_app"}, validArgs...),
 				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
-					ExportFn: func(groupID, appID string) (string, io.ReadCloser, error) {
+					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
 					},
 					ImportFn: func(groupID, appID string, appData []byte, strategy string) error {
@@ -241,7 +241,7 @@ func TestImportCommand(t *testing.T) {
 				ExpectedExitCode: 1,
 				ExpectedError:    "oh no failed to fetch app",
 				StitchClient: u.MockStitchClient{
-					ExportFn: func(groupID, appID string) (string, io.ReadCloser, error) {
+					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", nil, fmt.Errorf("oh no")
 					},
 					ImportFn: func(groupID, appID string, appData []byte, strategy string) error {
@@ -260,7 +260,7 @@ func TestImportCommand(t *testing.T) {
 				Args:             append([]string{"--path=../testdata/simple_app_empty_stitch_json"}, validArgs...),
 				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
-					ExportFn: func(groupID, appID string) (string, io.ReadCloser, error) {
+					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(strings.NewReader("export response")), nil
 					},
 					ImportFn: func(groupID, appID string, appData []byte, strategy string) error {
@@ -302,7 +302,7 @@ func TestImportCommand(t *testing.T) {
 				Args:             []string{"--path=../testdata/simple_app_with_instance_data"},
 				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
-					ExportFn: func(groupID, appID string) (string, io.ReadCloser, error) {
+					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(strings.NewReader("export response")), nil
 					},
 					ImportFn: func(groupID, appID string, appData []byte, strategy string) error {
@@ -325,7 +325,7 @@ func TestImportCommand(t *testing.T) {
 				ExpectedExitCode: 0,
 				WorkingDirectory: "../testdata/simple_app_with_instance_data",
 				StitchClient: u.MockStitchClient{
-					ExportFn: func(groupID, appID string) (string, io.ReadCloser, error) {
+					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(strings.NewReader("export response")), nil
 					},
 					ImportFn: func(groupID, appID string, appData []byte, strategy string) error {
@@ -348,7 +348,7 @@ func TestImportCommand(t *testing.T) {
 				ExpectedExitCode: 1,
 				ExpectedError:    "failed to sync app",
 				StitchClient: u.MockStitchClient{
-					ExportFn: func(groupID, appID string) (string, io.ReadCloser, error) {
+					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", nil, fmt.Errorf("oh no")
 					},
 					ImportFn: func(groupID, appID string, appData []byte, strategy string) error {
@@ -409,7 +409,7 @@ func TestImportCommand(t *testing.T) {
 						mockUI.InputReader = strings.NewReader("y\n")
 						importCommand.workingDirectory = tc.WorkingDirectory
 						mockStitchClient := &u.MockStitchClient{
-							ExportFn: func(groupID, appID string) (string, io.ReadCloser, error) {
+							ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 								return "", u.NewResponseBody(strings.NewReader("export response")), nil
 							},
 							ImportFn: func(groupID, appID string, appData []byte, strategy string) error {
