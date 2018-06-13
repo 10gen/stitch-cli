@@ -33,8 +33,8 @@ func TestAppLoadFromDirectory(t *testing.T) {
 		}
 
 		u.So(t, app["triggers"], gc.ShouldHaveLength, 2)
-		for _, tr := range app["triggers"].([]interface{}) {
-			u.So(t, tr.(map[string]interface{}), gc.ShouldNotBeEmpty)
+		for _, trgger := range app["triggers"].([]interface{}) {
+			u.So(t, trgger.(map[string]interface{}), gc.ShouldNotBeEmpty)
 		}
 
 		u.So(t, app["services"], gc.ShouldHaveLength, 3)
