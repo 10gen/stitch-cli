@@ -56,7 +56,7 @@ func (client simpleClient) WithAuth(username, apiKey string) Client {
 func (client *simpleClient) Groups() ([]Group, error) {
 	resp, err := client.do(
 		http.MethodGet,
-		fmt.Sprintf("%s/groups", client.atlasAPIBaseURL),
+		fmt.Sprintf("%s/api/public/v1.0/groups", client.atlasAPIBaseURL),
 		nil,
 		true,
 	)
@@ -131,7 +131,7 @@ func (client *simpleClient) do(
 func (client *simpleClient) DeleteDatabaseUser(groupID, username string) error {
 	resp, err := client.do(
 		http.MethodDelete,
-		fmt.Sprintf("%s/groups/%s/databaseUsers/admin/%s",
+		fmt.Sprintf("%s/api/atlas/v1.0/groups/%s/databaseUsers/admin/%s",
 			client.atlasAPIBaseURL,
 			groupID,
 			username,

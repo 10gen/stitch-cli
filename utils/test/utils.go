@@ -260,8 +260,7 @@ func (msc *MockStitchClient) FetchAppByClientAppID(clientAppID string) (*models.
 
 // MongoDBCloudEnv represents ENV variables required for running tests against cloud
 type MongoDBCloudEnv struct {
-	PrivateAPIBaseURL   string
-	AtlasAPIBaseURL     string
+	CloudAPIBaseURL     string
 	StitchServerBaseURL string
 	APIKey              string
 	Username            string
@@ -272,14 +271,9 @@ type MongoDBCloudEnv struct {
 func ENV() MongoDBCloudEnv {
 	defaultServerURL := "http://localhost:9090"
 
-	privateAPIBaseURL := os.Getenv("STITCH_MONGODB_CLOUD_PRIVATE_API_BASE_URL")
-	if privateAPIBaseURL == "" {
-		privateAPIBaseURL = defaultServerURL
-	}
-
-	atlasAPIBaseURL := os.Getenv("STITCH_MONGODB_CLOUD_ATLAS_API_BASE_URL")
-	if atlasAPIBaseURL == "" {
-		atlasAPIBaseURL = "http://localhost:9090/api/atlas/v1.0"
+	cloudAPIBaseURL := os.Getenv("STITCH_MONGODB_CLOUD_API_BASE_URL")
+	if cloudAPIBaseURL == "" {
+		cloudAPIBaseURL = defaultServerURL
 	}
 
 	stitchServerBaseURL := os.Getenv("STITCH_SERVER_BASE_URL")
@@ -288,8 +282,7 @@ func ENV() MongoDBCloudEnv {
 	}
 
 	return MongoDBCloudEnv{
-		PrivateAPIBaseURL:   privateAPIBaseURL,
-		AtlasAPIBaseURL:     atlasAPIBaseURL,
+		CloudAPIBaseURL:     cloudAPIBaseURL,
 		StitchServerBaseURL: stitchServerBaseURL,
 		APIKey:              os.Getenv("STITCH_MONGODB_CLOUD_API_KEY"),
 		Username:            os.Getenv("STITCH_MONGODB_CLOUD_USERNAME"),
@@ -315,16 +308,16 @@ var SkipUnlessMongoDBCloudRunning = func() func(t *testing.T) {
 		cloudEnv := ENV()
 
 		if mongoDBCloudNotRunning {
-			MustSkipf(t, "MongoDB Cloud not running at %s", cloudEnv.PrivateAPIBaseURL)
+			MustSkipf(t, "MongoDB Cloud not running at %s", cloudEnv.CloudAPIBaseURL)
 			return
 		}
-		req, err := http.NewRequest(http.MethodGet, cloudEnv.PrivateAPIBaseURL, nil)
+		req, err := http.NewRequest(http.MethodGet, cloudEnv.CloudAPIBaseURL, nil)
 		if err != nil {
 			panic(err)
 		}
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil || resp.StatusCode != http.StatusOK {
-			MustSkipf(t, "MongoDB Cloud not running at %s", cloudEnv.PrivateAPIBaseURL)
+			MustSkipf(t, "MongoDB Cloud not running at %s", cloudEnv.CloudAPIBaseURL)
 			return
 		}
 	}
