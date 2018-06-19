@@ -77,6 +77,7 @@ func (c *BaseCommand) Client() (api.Client, error) {
 	return c.client, nil
 }
 
+// AtlasClient returns a mdbcloud.Client for use with MDB Cloud Manager APIs
 func (c *BaseCommand) AtlasClient() (mdbcloud.Client, error) {
 	if c.atlasClient != nil {
 		return c.atlasClient, nil
@@ -284,7 +285,7 @@ func (c *BaseCommand) Help() string {
   --disable-color
 	Disable the use of colors in terminal output.
 
-  -y, --yes 
+  -y, --yes
 	Bypass prompts. Provide this parameter if you do not want to be prompted for input.`
 }
 

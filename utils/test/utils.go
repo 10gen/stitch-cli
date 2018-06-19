@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/10gen/stitch-cli/api"
+	"github.com/10gen/stitch-cli/api/mdbcloud"
 	"github.com/10gen/stitch-cli/auth"
 	"github.com/10gen/stitch-cli/models"
 	"github.com/10gen/stitch-cli/storage"
@@ -256,6 +257,43 @@ func (msc *MockStitchClient) FetchAppByClientAppID(clientAppID string) (*models.
 	}
 
 	return nil, api.ErrAppNotFound{clientAppID}
+}
+
+// MockMDBClient satisfies a mdbcloud.Client
+type MockMDBClient struct {
+	WithAuthFn           func(username, apiKey string) mdbcloud.Client
+	GroupsFn             func() ([]mdbcloud.Group, error)
+	GroupByNameFn        func(string) (*mdbcloud.Group, error)
+	DeleteDatabaseUserFn func(groupId, username string) error
+}
+
+// WithAuth will authenticate a user given username and apiKey
+func (mmc MockMDBClient) WithAuth(username, apiKey string) mdbcloud.Client {
+	return nil
+}
+
+// Groups will return a list of groups available
+func (mmc *MockMDBClient) Groups() ([]mdbcloud.Group, error) {
+	if mmc.GroupsFn != nil {
+		return mmc.GroupsFn()
+	}
+	return nil, errors.New("someone should test me")
+}
+
+// GroupByName will look up the Group given a name
+func (mmc *MockMDBClient) GroupByName(groupName string) (*mdbcloud.Group, error) {
+	if mmc.GroupByNameFn != nil {
+		return mmc.GroupByNameFn(groupName)
+	}
+	return nil, errors.New("someone should test me")
+}
+
+// DeleteDatabaseUser does nothing
+func (mmc *MockMDBClient) DeleteDatabaseUser(groupID, username string) error {
+	if mmc.DeleteDatabaseUserFn != nil {
+		return mmc.DeleteDatabaseUserFn(groupID, username)
+	}
+	return nil
 }
 
 // MongoDBCloudEnv represents ENV variables required for running tests against cloud

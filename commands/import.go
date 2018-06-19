@@ -9,7 +9,6 @@ import (
 
 	"github.com/10gen/stitch-cli/api"
 	"github.com/10gen/stitch-cli/models"
-	"github.com/10gen/stitch-cli/user"
 	u "github.com/10gen/stitch-cli/user"
 	"github.com/10gen/stitch-cli/utils"
 
@@ -187,7 +186,7 @@ func (ic *ImportCommand) importApp() error {
 		ic.flagStrategy = importStrategyReplace
 
 		var wantedNewApp bool
-		app, wantedNewApp, err = ic.askCreateEmptyApp(err.Error(), appInstanceData.AppName(), user, stitchClient)
+		app, wantedNewApp, err = ic.askCreateEmptyApp(err.Error(), appInstanceData.AppName(), stitchClient)
 		if err != nil {
 			return err
 		}
@@ -250,7 +249,7 @@ func (ic *ImportCommand) importApp() error {
 	return nil
 }
 
-func (ic *ImportCommand) resolveGroupID(user *user.User, stitchClient api.StitchClient) (string, error) {
+func (ic *ImportCommand) resolveGroupID() (string, error) {
 	if ic.flagGroupID != "" {
 		return ic.flagGroupID, nil
 	}
@@ -292,13 +291,23 @@ func (ic *ImportCommand) resolveGroupID(user *user.User, stitchClient api.Stitch
 			break
 		}
 
+		groupFromName, err := atlasClient.GroupByName(groupName)
+		if err != nil {
+			return "", err
+		}
+
+		groupID = groupFromName.ID
+		if groupID != "" {
+			break
+		}
+
 		ic.UI.Info("Could not understand response, please try again")
 	}
 
 	return groupID, nil
 }
 
-func (ic *ImportCommand) askCreateEmptyApp(query string, defaultAppName string, user *user.User, stitchClient api.StitchClient) (*models.App, bool, error) {
+func (ic *ImportCommand) askCreateEmptyApp(query string, defaultAppName string, stitchClient api.StitchClient) (*models.App, bool, error) {
 	if ic.flagAppName != "" {
 		defaultAppName = ic.flagAppName
 	}
@@ -317,7 +326,7 @@ func (ic *ImportCommand) askCreateEmptyApp(query string, defaultAppName string, 
 		return nil, false, err
 	}
 
-	groupID, err := ic.resolveGroupID(user, stitchClient)
+	groupID, err := ic.resolveGroupID()
 	if err != nil {
 		return nil, false, err
 	}

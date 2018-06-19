@@ -30,6 +30,7 @@ type Group struct {
 type Client interface {
 	WithAuth(username, apiKey string) Client
 	Groups() ([]Group, error)
+	GroupByName(string) (*Group, error)
 	DeleteDatabaseUser(groupID, username string) error
 }
 
@@ -76,6 +77,34 @@ func (client *simpleClient) Groups() ([]Group, error) {
 	}
 
 	return groupResponse.Results, nil
+}
+
+func (client *simpleClient) GroupByName(groupName string) (*Group, error) {
+	resp, err := client.do(
+		http.MethodGet,
+		fmt.Sprintf("%s/api/public/v1.0/groups/byName/%s", client.atlasAPIBaseURL, groupName),
+		nil,
+		true,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == 404 {
+			return nil, fmt.Errorf("no project found with name %s", groupName)
+		}
+		return nil, fmt.Errorf("failed to fetch available Project IDs: %s", resp.Status)
+	}
+
+	dec := json.NewDecoder(resp.Body)
+	var groupResponse Group
+	if err := dec.Decode(&groupResponse); err != nil {
+		return nil, err
+	}
+
+	return &groupResponse, nil
 }
 
 func (client *simpleClient) do(
