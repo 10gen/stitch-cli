@@ -76,6 +76,7 @@ func TestImportNewApp(t *testing.T) {
 			ExpectedExitCode int
 			StitchClient     u.MockStitchClient
 			AtlasClient      u.MockMDBClient
+			ProjectNameInput string
 		}
 
 		for _, tc := range []testCase{
@@ -158,46 +159,8 @@ func TestImportNewApp(t *testing.T) {
 						return []mdbcloud.Group{{ID: "59dbcb07127ab4131c54e810", Name: "My-Group"}}, nil
 					},
 				},
+				ProjectNameInput: "My-Group\n",
 			},
-		} {
-			t.Run(tc.Description, func(t *testing.T) {
-				importCommand, mockUI := setup()
-
-				// Mock responses for prompts
-				confirmCreateApp := "y\n"
-				enterAppName := "My-Test-app\n"
-				enterProjectName := "My-Group\n"
-				mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName + enterProjectName)
-				importCommand.stitchClient = &tc.StitchClient
-				importCommand.atlasClient = &tc.AtlasClient
-
-				writeToDirectoryCallCount := 0
-				importCommand.writeToDirectory = func(dest string, zipData io.Reader, overwrite bool) error {
-					writeToDirectoryCallCount++
-					return nil
-				}
-
-				writeAppConfigCallCount := 0
-				importCommand.writeAppConfigToFile = func(dest string, app models.AppInstanceData) error {
-					writeAppConfigCallCount++
-					return nil
-				}
-
-				exitCode := importCommand.Run(tc.Args)
-				u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
-
-				u.So(t, mockUI.ErrorWriter.String(), gc.ShouldBeEmpty)
-				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "New app created: My-Test-app-abcdef")
-				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "Successfully imported 'My-Test-app-abcdef'")
-
-				mockClient := importCommand.stitchClient.(*u.MockStitchClient)
-				u.So(t, mockClient.ExportFnCalls, gc.ShouldHaveLength, 1)
-
-				u.So(t, writeToDirectoryCallCount, gc.ShouldEqual, 1)
-				u.So(t, writeAppConfigCallCount, gc.ShouldEqual, 1)
-			})
-		}
-		for _, tc := range []testCase{
 			{
 				Description:      "supports creating new app when project name is not returned in list",
 				Args:             []string{"--path=../testdata/new_app"},
@@ -224,6 +187,7 @@ func TestImportNewApp(t *testing.T) {
 						return &mdbcloud.Group{ID: "59dbcb07127ab4131c54e810", Name: "Other-Group"}, nil
 					},
 				},
+				ProjectNameInput: "Other-Group\n",
 			},
 		} {
 			t.Run(tc.Description, func(t *testing.T) {
@@ -232,7 +196,7 @@ func TestImportNewApp(t *testing.T) {
 				// Mock responses for prompts
 				confirmCreateApp := "y\n"
 				enterAppName := "My-Test-app\n"
-				enterProjectName := "Other-Group\n"
+				enterProjectName := tc.ProjectNameInput
 				mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName + enterProjectName)
 				importCommand.stitchClient = &tc.StitchClient
 				importCommand.atlasClient = &tc.AtlasClient
@@ -248,6 +212,7 @@ func TestImportNewApp(t *testing.T) {
 					writeAppConfigCallCount++
 					return nil
 				}
+
 				exitCode := importCommand.Run(tc.Args)
 				u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
 

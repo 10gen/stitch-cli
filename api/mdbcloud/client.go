@@ -92,7 +92,7 @@ func (client *simpleClient) GroupByName(groupName string) (*Group, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == 404 {
+		if resp.StatusCode == http.StatusNotFound {
 			return nil, fmt.Errorf("no project found with name %s", groupName)
 		}
 		return nil, fmt.Errorf("failed to fetch available Project IDs: %s", resp.Status)
