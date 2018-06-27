@@ -206,7 +206,7 @@ func (ic *ImportCommand) importApp() error {
 	if !ic.flagYes && !skipDiff {
 		diffs, err := stitchClient.Diff(app.GroupID, app.ID, appData, ic.flagStrategy)
 		if err != nil {
-			return fmt.Errorf("failed to diff app with currently deployed instance: %s", err)
+			return fmt.Errorf("Failed to diff app with currently deployed instance.\n%s", err)
 		}
 
 		if len(diffs) == 0 {
