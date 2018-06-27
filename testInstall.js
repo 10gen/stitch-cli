@@ -74,6 +74,7 @@ if (directoryExists(tempInstallPath)) {
   console.log(`Deleting directory '${tempInstallPath}'.`);
   removeFolder(tempInstallPath);
 }
+
 fs.mkdirSync(tempInstallPath);
 
 if (process.platform === 'win32') {
@@ -82,6 +83,7 @@ if (process.platform === 'win32') {
 } else {
   checkSpawn(spawnSync('npm', ['i', `${__dirname}`], { cwd: tempInstallPath }));
 }
+
 const executable = path.resolve(
   tempInstallPath,
   'node_modules',

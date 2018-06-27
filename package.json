@@ -7,6 +7,9 @@
     "url": "https://github.com/10gen/stitch-cli.git"
   },
   "license": "Apache-2.0",
+  "bin": {
+    "stitch-cli": "./wrapper.js"
+  },
   "scripts": {
     "install": "node install.js"
   },
