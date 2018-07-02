@@ -8,14 +8,15 @@ npm install -g mongodb-stitch-cli
 ```
 
 #### Building Binaries from Source
+Build binary in place:
 ```
 go build
 ```
-Builds binary in place.
+Or, to build binary and install in your Go workspace's bin directory:
 ```
 go install
 ```
-Builds binary and installs in your Go workspace's bin directory
+
 
 ## Documentation
 
