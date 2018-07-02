@@ -3,7 +3,7 @@ const path = require('path');
 const request = require('request');
 
 const baseDownloadURL =
-  'https://s3.amazonaws.com/stitch-clis/stitch_cli_linux_64_69ab0a733f209eda9901c1aea8a19e5c2e5fd862_18_06_05_16_56_25';
+  'https://s3.amazonaws.com/stitch-clis/stitch_cli_linux_64_54af1c1be9343f4631b3d84a7f22411ca48adea1_18_06_26_02_14_18';
 const linuxDownloadURL = `${baseDownloadURL}/linux-amd64/stitch-cli`;
 const macDownloadURL = `${baseDownloadURL}/macos-amd64/stitch-cli`;
 const windowsDownloadURL = `${baseDownloadURL}/windows-amd64/stitch-cli.exe`;
@@ -16,25 +16,25 @@ function getDownloadURL() {
     if (process.arch === 'x64') {
       downloadUrl = linuxDownloadURL;
     } else {
-      return Promise.reject(new Error('Only Linux 64 bits supported.'));
+      throw new Error('Only Linux 64 bits supported.');
     }
   } else if (platform === 'darwin' || platform === 'freebsd') {
     if (process.arch === 'x64') {
       downloadUrl = macDownloadURL;
     } else {
-      return Promise.reject(new Error('Only Mac 64 bits supported.'));
+      throw new Error('Only Mac 64 bits supported.');
     }
   } else if (platform === 'win32') {
     if (process.arch === 'x64') {
       downloadUrl = windowsDownloadURL;
     } else {
-      return Promise.reject(new Error('Only Windows 64 bits supported.'));
+      throw new Error('Only Windows 64 bits supported.');
     }
   } else {
-    return Promise.reject(new Error(`Unexpected platform or architecture: ${process.platform} ${process.arch}`));
+    throw new Error(`Unexpected platform or architecture: ${process.platform} ${process.arch}`);
   }
 
-  return Promise.resolve(downloadUrl);
+  return downloadUrl;
 }
 
 function fixFilePermissions(filePath) {
@@ -44,7 +44,6 @@ function fixFilePermissions(filePath) {
     // 64 == 0100 (no octal literal in strict mode)
     // eslint-disable-next-line no-bitwise
     if (!(stat.mode & 64)) {
-      console.log('Fixing file permissions');
       fs.chmodSync(filePath, '755');
     }
   }
@@ -90,9 +89,15 @@ function requstBinary(downloadUrl) {
 }
 
 // Install script starts here
-getDownloadURL()
-  .then(downloadUrl => requstBinary(downloadUrl))
-  .catch(err => {
-    console.error('Stitch CLI installation failed:', err);
-    process.exit(1);
-  });
+let downloadUrl;
+try {
+  downloadUrl = getDownloadURL();
+} catch (err) {
+  console.error('Stitch CLI installation failed:', err);
+  process.exit(1);
+}
+
+requstBinary(downloadUrl).catch(err => {
+  console.error('Stitch CLI installation failed while downloading:', err);
+  process.exit(1);
+});

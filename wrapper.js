@@ -7,7 +7,7 @@ function onExit(childProcess) {
   return new Promise((resolve, reject) => {
     childProcess.on('exit', code => {
       if (code === 0) {
-        resolve(undefined);
+        resolve();
       } else {
         reject(code);
       }
