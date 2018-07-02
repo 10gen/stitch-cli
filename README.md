@@ -39,7 +39,7 @@ When using `stitch-cli login` you will also need to include `--auth-provider=loc
 stitch-cli login --base-url=http://localhost:8080 --auth-provider=local-userpass --username=USERNAME --password=PASSWORD
 ```
 
-Where `USERNAME` and `PASSWORD` are those set for your local development server.
+Where `USERNAME` and `PASSWORD` are the credentials for an existing local user.
 
 ## Linting
 
