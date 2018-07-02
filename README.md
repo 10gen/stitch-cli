@@ -7,6 +7,16 @@ npm install mongodb-stitch-cli
 npm install -g mongodb-stitch-cli
 ```
 
+#### Building Binaries from Source
+```
+go build
+```
+Builds binary in place.
+```
+go install
+```
+Builds binary and installs in your Go workspace's bin directory
+
 ## Documentation
 
 https://docs.mongodb.com/stitch/import-export/stitch-cli-reference/
