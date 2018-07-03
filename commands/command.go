@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	flagAppIDName = "app-id"
+	flagProjectIDName = "project-id"
+	flagAppIDName     = "app-id"
 )
 
 var (
