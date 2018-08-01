@@ -395,7 +395,8 @@ func (ic *ImportCommand) resolveAppInstanceData(path string) (models.AppInstance
 	return appInstanceDataFromFile, nil
 }
 
-// isObjectIDHex returns whether s is a valid hex representation of an ObjectId
+// isObjectIDHex returns whether s is a valid hex representation of an ObjectId.
+// copied from mgo/bson#IsObjectIdHex
 func isObjectIDHex(s string) bool {
 	if len(s) != 24 {
 		return false
