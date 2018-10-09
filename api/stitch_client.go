@@ -22,7 +22,7 @@ const (
 	appsByGroupIDRoute     = adminBaseURL + "/groups/%s/apps"
 	userProfileRoute       = adminBaseURL + "/auth/profile"
 	hostingAssetRoute      = adminBaseURL + "/groups/%s/apps/%s/hosting/assets/asset"
-	hostingAssetsRoute     = adminBaseURL + "/groups/%s/apps/%s/hosting/assets?recursive=true"
+	hostingAssetsRoute     = adminBaseURL + "/groups/%s/apps/%s/hosting/assets"
 )
 
 var (
@@ -33,6 +33,13 @@ var (
 const (
 	metadataParam = "meta"
 	fileParam     = "file"
+	pathParam     = "path"
+)
+
+const (
+	copyPayload          = `{ "copy_from": %s, "copy_to": %s }`
+	movePayload          = `{ "move_from": %s, "move_to": %s }`
+	setAttributesPayload = `{ "attributes": %s }`
 )
 
 // StitchClient represents a Client that can be used to call the Stitch Admin API
@@ -46,6 +53,10 @@ type StitchClient interface {
 	FetchAppsByGroupID(groupID string) ([]*models.App, error)
 	CreateEmptyApp(groupID, appName string) (*models.App, error)
 	UploadAsset(groupID, appID, path, hash string, size int64, body io.Reader, attributes ...AssetAttribute) error
+	CopyAsset(groupID, appID, fromPath, toPath string) error
+	MoveAsset(groupID, appID, fromPath, toPath string) error
+	DeleteAsset(groupID, appID, path string) error
+	SetAssetAttributes(groupID, appID, path string, attributes ...AssetAttribute) error
 	ListAssetsForAppID(groupID, appID string) ([]AssetMetadata, error)
 }
 
@@ -289,6 +300,54 @@ func (sc *basicStitchClient) UploadAsset(groupID, appID, path, hash string, size
 	return nil
 }
 
+// SetAssetAttributes sets the asset at the given path to have the provided AssetAttributes
+func (sc *basicStitchClient) SetAssetAttributes(groupID, appID, path string, attributes ...AssetAttribute) error {
+	attrs, err := json.Marshal(attributes)
+	if err != nil {
+		return err
+	}
+
+	_, err = sc.ExecuteRequest(
+		http.MethodPatch,
+		fmt.Sprintf(hostingAssetRoute+"?%s=%s", groupID, appID, pathParam, path),
+		RequestOptions{
+			Body: strings.NewReader(fmt.Sprintf(setAttributesPayload, attrs)),
+		},
+	)
+	return err
+}
+
+// CopyAsset moves an asset from location fromPath to location toPath
+func (sc *basicStitchClient) CopyAsset(groupID, appID, fromPath, toPath string) error {
+	return sc.invokePostRoute(groupID, appID, fromPath, toPath, copyPayload)
+}
+
+// MoveAsset moves an asset from location fromPath to location toPath
+func (sc *basicStitchClient) MoveAsset(groupID, appID, fromPath, toPath string) error {
+	return sc.invokePostRoute(groupID, appID, fromPath, toPath, movePayload)
+}
+
+func (sc *basicStitchClient) invokePostRoute(groupID, appID, fromPath, toPath, payload string) error {
+	_, err := sc.ExecuteRequest(
+		http.MethodPost,
+		fmt.Sprintf(hostingAssetsRoute, groupID, appID),
+		RequestOptions{
+			Body: strings.NewReader(fmt.Sprintf(payload, fromPath, toPath)),
+		},
+	)
+	return err
+}
+
+// DeleteAsset deletes the asset at the given path
+func (sc *basicStitchClient) DeleteAsset(groupID, appID, path string) error {
+	_, err := sc.ExecuteRequest(
+		http.MethodDelete,
+		fmt.Sprintf(hostingAssetsRoute, groupID, appID),
+		RequestOptions{},
+	)
+	return err
+}
+
 func (sc *basicStitchClient) findProjectAppByClientAppID(groupIDs []string, clientAppID string) (*models.App, error) {
 	for _, groupID := range groupIDs {
 		apps, err := sc.FetchAppsByGroupID(groupID)
@@ -332,7 +391,7 @@ func (sc *basicStitchClient) CreateEmptyApp(groupID, appName string) (*models.Ap
 func (sc *basicStitchClient) ListAssetsForAppID(groupID, appID string) ([]AssetMetadata, error) {
 	res, err := sc.ExecuteRequest(
 		http.MethodGet,
-		fmt.Sprintf(hostingAssetsRoute, groupID, appID),
+		fmt.Sprintf(hostingAssetsRoute+"?recursive=true", groupID, appID),
 		RequestOptions{},
 	)
 	if err != nil {
