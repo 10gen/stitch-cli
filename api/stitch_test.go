@@ -256,7 +256,7 @@ func TestPostAsset(t *testing.T) {
 }
 
 func TestDeleteAsset(t *testing.T) {
-	t.Run("deleteing an asset should work", func(t *testing.T) {
+	t.Run("deleting an asset should work", func(t *testing.T) {
 		testHandler := func(w http.ResponseWriter, r *http.Request) {
 			path := r.URL.Query().Get(pathParam)
 			if path == "" {

@@ -36,11 +36,19 @@ const (
 	pathParam     = "path"
 )
 
-const (
-	copyPayload          = `{ "copy_from": "%s", "copy_to": "%s" }`
-	movePayload          = `{ "move_from": "%s", "move_to": "%s" }`
-	setAttributesPayload = `{ "attributes": %s }`
-)
+type copyPayload struct {
+	CopyFrom string `json:"copy_from"`
+	CopyTo   string `json:"copy_to"`
+}
+
+type movePayload struct {
+	MoveFrom string `json:"move_from"`
+	MoveTo   string `json:"move_to"`
+}
+
+type setAttributesPayload struct {
+	Attributes []AssetAttribute `json:"attributes"`
+}
 
 // StitchClient represents a Client that can be used to call the Stitch Admin API
 type StitchClient interface {
@@ -295,7 +303,7 @@ func (sc *basicStitchClient) UploadAsset(groupID, appID, path, hash string, size
 
 // SetAssetAttributes sets the asset at the given path to have the provided AssetAttributes
 func (sc *basicStitchClient) SetAssetAttributes(groupID, appID, path string, attributes ...AssetAttribute) error {
-	attrs, err := json.Marshal(attributes)
+	attrs, err := json.Marshal(setAttributesPayload{attributes})
 	if err != nil {
 		return err
 	}
@@ -304,7 +312,7 @@ func (sc *basicStitchClient) SetAssetAttributes(groupID, appID, path string, att
 		http.MethodPatch,
 		fmt.Sprintf(hostingAssetRoute+"?%s=%s", groupID, appID, pathParam, path),
 		RequestOptions{
-			Body: strings.NewReader(fmt.Sprintf(setAttributesPayload, attrs)),
+			Body: bytes.NewReader(attrs),
 		},
 	)
 	return checkStatusNoContent(res, err, "failed to update asset")
@@ -312,22 +320,32 @@ func (sc *basicStitchClient) SetAssetAttributes(groupID, appID, path string, att
 
 // CopyAsset moves an asset from location fromPath to location toPath
 func (sc *basicStitchClient) CopyAsset(groupID, appID, fromPath, toPath string) error {
-	res, err := sc.invokePostRoute(groupID, appID, fromPath, toPath, copyPayload)
+	payload, err := json.Marshal(copyPayload{fromPath, toPath})
+	if err != nil {
+		return err
+	}
+
+	res, err := sc.invokePostRoute(groupID, appID, bytes.NewReader(payload))
 	return checkStatusNoContent(res, err, "failed to copy asset")
 }
 
 // MoveAsset moves an asset from location fromPath to location toPath
 func (sc *basicStitchClient) MoveAsset(groupID, appID, fromPath, toPath string) error {
-	res, err := sc.invokePostRoute(groupID, appID, fromPath, toPath, movePayload)
+	payload, err := json.Marshal(movePayload{fromPath, toPath})
+	if err != nil {
+		return err
+	}
+
+	res, err := sc.invokePostRoute(groupID, appID, bytes.NewReader(payload))
 	return checkStatusNoContent(res, err, "failed to move asset")
 }
 
-func (sc *basicStitchClient) invokePostRoute(groupID, appID, fromPath, toPath, payload string) (*http.Response, error) {
+func (sc *basicStitchClient) invokePostRoute(groupID, appID string, payload io.Reader) (*http.Response, error) {
 	return sc.ExecuteRequest(
 		http.MethodPost,
 		fmt.Sprintf(hostingAssetsRoute, groupID, appID),
 		RequestOptions{
-			Body: strings.NewReader(fmt.Sprintf(payload, fromPath, toPath)),
+			Body: payload,
 		},
 	)
 }
