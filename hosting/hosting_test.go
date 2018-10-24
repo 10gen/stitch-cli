@@ -1,6 +1,7 @@
 package hosting_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,8 +29,9 @@ func localFileToAssetMetadata(t *testing.T, localPath, rootDir string, assetDesc
 	relPath, pathErr := filepath.Rel(rootDir, localPath)
 	u.So(t, pathErr, gc.ShouldBeNil)
 	filePath := fmt.Sprintf("/%s", relPath)
-	assetMetadata, famErr := hosting.FileToAssetMetadata(appID, localPath, filePath, info, assetDescriptions[filePath])
+	assetMetadata, hashUpdated, famErr := hosting.FileToAssetMetadata(appID, localPath, filePath, info, assetDescriptions[filePath], &hosting.AssetCacheDataMap{})
 	u.So(t, famErr, gc.ShouldBeNil)
+	u.So(t, hashUpdated, gc.ShouldBeTrue)
 
 	u.So(t, assetMetadata.AppID, gc.ShouldEqual, appID)
 	u.So(t, assetMetadata.FilePath, gc.ShouldEqual, filePath)
@@ -82,9 +84,23 @@ func TestListLocalAssetMetadata(t *testing.T) {
 	u.So(t, info.IsDir(), gc.ShouldBeTrue)
 
 	appID := "3720"
-	assetMetadata, listErr := hosting.ListLocalAssetMetadata(appID, rootDir, assetDescriptions)
+	assetMetadata, hashCacheData, hashesUpdated, listErr := hosting.ListLocalAssetMetadata(appID, rootDir, assetDescriptions, hosting.AssetCacheDataMap{})
 	u.So(t, listErr, gc.ShouldBeNil)
+	u.So(t, hashesUpdated, gc.ShouldBeTrue)
 	u.So(t, assetMetadata, gc.ShouldResemble, testData)
+
+	u.So(t, hashCacheData.Contains(appID, am0.FilePath), gc.ShouldBeTrue)
+
+	cd0 := hashCacheData.Get(appID, am0.FilePath)
+	u.So(t, cd0.FileHash, gc.ShouldEqual, am0.FileHash)
+	u.So(t, cd0.FilePath, gc.ShouldEqual, am0.FilePath)
+	u.So(t, cd0.FileSize, gc.ShouldEqual, am0.FileSize)
+
+	u.So(t, hashCacheData.Contains(appID, am1.FilePath), gc.ShouldBeTrue)
+	cd1 := hashCacheData.Get(appID, am1.FilePath)
+	u.So(t, cd1.FileHash, gc.ShouldEqual, am1.FileHash)
+	u.So(t, cd1.FilePath, gc.ShouldEqual, am1.FilePath)
+	u.So(t, cd1.FileSize, gc.ShouldEqual, am1.FileSize)
 }
 
 var jsonAttr = hosting.AssetAttribute{
@@ -148,6 +164,163 @@ func TestGetModifiedAssetMetadata(t *testing.T) {
 	}
 }
 
+func TestCacheFileToAssetCacheData(t *testing.T) {
+	path := "../testdata/configs/.asset_cache_test_data.json"
+	absPath, pErr := filepath.Abs(path)
+	u.So(t, pErr, gc.ShouldBeNil)
+
+	cacheData, cErr := hosting.CacheFileToAssetCacheData(absPath)
+	u.So(t, cErr, gc.ShouldBeNil)
+
+	for appID, assetCacheData := range cacheData {
+		u.So(t, len(appID), gc.ShouldBeGreaterThan, 0)
+		for filePath, cd := range assetCacheData {
+			u.So(t, cd.FilePath, gc.ShouldEqual, filePath)
+			u.So(t, cd.FileSize, gc.ShouldBeGreaterThan, 0)
+			u.So(t, len(cd.FileHash), gc.ShouldBeGreaterThan, 0)
+			u.So(t, cd.LastModified, gc.ShouldBeGreaterThan, 0)
+		}
+	}
+}
+
+func assertAssetCacheDataEqual(t *testing.T, actual, expected hosting.AssetCacheData) {
+	u.So(t, actual.FilePath, gc.ShouldEqual, expected.FilePath)
+	u.So(t, actual.LastModified, gc.ShouldEqual, expected.LastModified)
+	u.So(t, actual.FileSize, gc.ShouldEqual, expected.FileSize)
+	u.So(t, actual.FileHash, gc.ShouldEqual, expected.FileHash)
+}
+
+func TestUpdateCacheFile(t *testing.T) {
+	configPath := "../testdata/configs/tmp/.asset_cache_update_test.json"
+	absConfigPath, pErr := filepath.Abs(configPath)
+	u.So(t, pErr, gc.ShouldBeNil)
+
+	appID := "3720"
+	filePath := "/fast/ship"
+	lastModified := int64(10887)
+	fileSize := int64(12)
+	fileHash := "l3in5h1p"
+	assetCacheData := hosting.AssetCacheData{
+		filePath,
+		lastModified,
+		fileSize,
+		fileHash,
+	}
+	cacheData := hosting.AssetCacheDataMap{
+		appID: {
+			filePath: assetCacheData,
+		},
+	}
+
+	uErr := hosting.UpdateCacheFile(absConfigPath, cacheData)
+	u.So(t, uErr, gc.ShouldBeNil)
+
+	defer func() {
+		rErr := os.Remove(absConfigPath)
+		u.So(t, rErr, gc.ShouldBeNil)
+	}()
+
+	updatedCDMap, cErr := hosting.CacheFileToAssetCacheData(absConfigPath)
+	u.So(t, cErr, gc.ShouldBeNil)
+
+	updatedCacheData := hosting.AssetCacheDataMap(updatedCDMap)
+	u.So(t, updatedCacheData.Contains(appID, filePath), gc.ShouldBeTrue)
+
+	assertAssetCacheDataEqual(t, updatedCacheData.Get(appID, filePath), assetCacheData)
+
+	t.Run("when a second update occurs the original data should be intact", func(t *testing.T) {
+		newFilePath := "slowShip"
+		newAssetCacheData := hosting.AssetCacheData{
+			newFilePath,
+			lastModified,
+			fileSize,
+			fileHash,
+		}
+		updatedCDMap := hosting.AssetCacheDataMap(cacheData).Set(appID, newFilePath, newAssetCacheData)
+		updatedCacheData = hosting.AssetCacheDataMap(updatedCDMap)
+
+		u.So(t, updatedCacheData.Contains(appID, filePath), gc.ShouldBeTrue)
+		u.So(t, updatedCacheData.Contains(appID, newFilePath), gc.ShouldBeTrue)
+	})
+}
+
+func TestAssetCacheDataMap(t *testing.T) {
+	appID := "3720"
+	filePath := "/fast/ship"
+	lastModified := int64(10887)
+	fileSize := int64(12)
+	fileHash := "l3in5h1p"
+	assetCacheData := hosting.AssetCacheData{
+		filePath,
+		lastModified,
+		fileSize,
+		fileHash,
+	}
+	cacheData := hosting.AssetCacheDataMap{
+		appID: {
+			filePath: assetCacheData,
+		},
+	}
+
+	t.Run("when Contains returns true Get should return the appropriate AssetCacheData", func(t *testing.T) {
+		u.So(t, cacheData.Contains(appID, filePath), gc.ShouldBeTrue)
+		cd := cacheData.Get(appID, filePath)
+		assertAssetCacheDataEqual(t, cd, assetCacheData)
+	})
+
+	t.Run("when Contains returns false Get should return empty AssetCacheData", func(t *testing.T) {
+		u.So(t, cacheData.Contains(appID, "/uhhh/me"), gc.ShouldBeFalse)
+		u.So(t, cacheData.Contains("f4r7!", filePath), gc.ShouldBeFalse)
+
+		cd := cacheData.Get(appID, "/uhhh/me")
+		assertAssetCacheDataEqual(t, cd, hosting.AssetCacheData{})
+
+		cd = cacheData.Get("f4r7!", filePath)
+		assertAssetCacheDataEqual(t, cd, hosting.AssetCacheData{})
+	})
+
+	fp0 := "/hello/there"
+	acd := hosting.AssetCacheData{
+		fp0,
+		int64(10887),
+		int64(66),
+		"0rd3r",
+	}
+
+	t.Run("Set should work for an existing appID", func(t *testing.T) {
+		cd := cacheData.Set(appID, fp0, acd).Get(appID, fp0)
+		assertAssetCacheDataEqual(t, cd, acd)
+	})
+
+	t.Run("Set should work for a non-existing appID", func(t *testing.T) {
+		appID1 := "2187"
+		cd := cacheData.Set(appID1, fp0, acd).Get(appID1, fp0)
+		assertAssetCacheDataEqual(t, cd, acd)
+	})
+}
+
+func TestRoundTripAssetCacheData(t *testing.T) {
+	cacheData := hosting.AssetCacheData{
+		"/fast/ship",
+		int64(10887),
+		int64(12),
+		"l3in5h1p",
+	}
+
+	md, mErr := json.Marshal(cacheData)
+	u.So(t, mErr, gc.ShouldBeNil)
+
+	var cd hosting.AssetCacheData
+	u.So(t, json.Unmarshal(md, &cd), gc.ShouldBeNil)
+
+	u.So(t, cacheData.FilePath, gc.ShouldEqual, cd.FilePath)
+	u.So(t, cacheData.LastModified, gc.ShouldEqual, cd.LastModified)
+	u.So(t, cacheData.FileSize, gc.ShouldEqual, cd.FileSize)
+	u.So(t, cacheData.FileHash, gc.ShouldEqual, cd.FileHash)
+
+	u.So(t, cacheData, gc.ShouldResemble, cd)
+}
+
 func TestDiffAssetMetadata(t *testing.T) {
 	jsonAM := hosting.AssetMetadata{
 		FilePath: "/french/fry",
@@ -166,6 +339,7 @@ func TestDiffAssetMetadata(t *testing.T) {
 		added    []hosting.AssetMetadata
 		deleted  []hosting.AssetMetadata
 		modified []hosting.ModifiedAssetMetadata
+		merge    bool
 	}{
 		{
 			local: []hosting.AssetMetadata{
@@ -207,6 +381,19 @@ func TestDiffAssetMetadata(t *testing.T) {
 				xmlAM,
 			},
 			modified: nil,
+		},
+		{
+			local: []hosting.AssetMetadata{
+				jsonAM,
+			},
+			remote: []hosting.AssetMetadata{
+				jsonAM,
+				xmlAM,
+			},
+			added:    nil,
+			deleted:  nil,
+			modified: nil,
+			merge:    true,
 		},
 		{
 			local: []hosting.AssetMetadata{
@@ -319,7 +506,7 @@ func TestDiffAssetMetadata(t *testing.T) {
 			},
 		},
 	} {
-		u.So(t, hosting.DiffAssetMetadata(tc.local, tc.remote), gc.ShouldResemble, hosting.NewAssetMetadataDiffs(tc.added, tc.deleted, tc.modified))
+		u.So(t, hosting.DiffAssetMetadata(tc.local, tc.remote, tc.merge), gc.ShouldResemble, hosting.NewAssetMetadataDiffs(tc.added, tc.deleted, tc.modified))
 	}
 }
 
@@ -448,5 +635,4 @@ func TestAssetMetadataDiff(t *testing.T) {
 		amd := hosting.NewAssetMetadataDiffs(added, deleted, modified)
 		u.So(t, amd.Diff(), gc.ShouldResemble, append(append(addDiff, deleteDiff...), modifyDiff...))
 	})
-
 }

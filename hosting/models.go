@@ -184,3 +184,43 @@ func NewAssetMetadataDiffs(added, deleted []AssetMetadata, modified []ModifiedAs
 		ModifiedLocally: modified,
 	}
 }
+
+// AssetCacheData represents the data associated with an AssetMetadata needed for caching
+type AssetCacheData struct {
+	FilePath     string `json:"path"`
+	LastModified int64  `json:"last_modified,omitempty"`
+	FileSize     int64  `json:"size,omitempty"`
+	FileHash     string `json:"hash,omitempty"`
+}
+
+// AssetCacheDataMap represents a map of appID to filePath to AssetCacheData
+type AssetCacheDataMap map[string]map[string]AssetCacheData
+
+// Contains checks if the map contains an appID and filePath
+func (acdm AssetCacheDataMap) Contains(appID, filePath string) bool {
+	if acd, ok := acdm[appID]; ok {
+		if _, ok := acd[filePath]; ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Get will get an AssetCacheData by appID and filePath or return an empty AssetCacheData if one does not exist
+func (acdm AssetCacheDataMap) Get(appID, filePath string) AssetCacheData {
+	var cacheData AssetCacheData
+	if acdm.Contains(appID, filePath) {
+		cacheData = acdm[appID][filePath]
+	}
+	return cacheData
+}
+
+// Set will set an appID's filePath's AssetCacheData by appID and filePath or add them if they don't exist already
+func (acdm AssetCacheDataMap) Set(appID, filePath string, acd AssetCacheData) AssetCacheDataMap {
+	if _, ok := acdm[appID]; !ok {
+		acdm[appID] = map[string]AssetCacheData{}
+	}
+	acdm[appID][filePath] = acd
+	return acdm
+}
