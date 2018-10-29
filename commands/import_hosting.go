@@ -22,7 +22,7 @@ func checkErrs(errChan <-chan error, errDoneChan chan<- struct{}, ui cli.Ui, err
 }
 
 // ImportHosting will push local Stitch hosting assets to the server
-func ImportHosting(groupID, appID, rootDir, strategy string, assetMetadataDiffs *hosting.AssetMetadataDiffs, client api.StitchClient, ui cli.Ui) error {
+func ImportHosting(groupID, appID, rootDir, strategy string, assetMetadataDiffs *hosting.AssetMetadataDiffs, resetCache bool, client api.StitchClient, ui cli.Ui) error {
 	// build a channel of hosting operations
 	var opWG sync.WaitGroup
 	opChan := make(chan hostingOp)
@@ -52,7 +52,7 @@ func ImportHosting(groupID, appID, rootDir, strategy string, assetMetadataDiffs 
 	}
 
 	for _, modified := range assetMetadataDiffs.ModifiedLocally {
-		opChan <- &modifyOp{baseOp, modified}
+		opChan <- &modifyOp{baseOp, modified, resetCache}
 	}
 
 	close(opChan)
@@ -117,6 +117,7 @@ func (op *deleteOp) Do() error {
 type modifyOp struct {
 	baseHostingOp
 	modifiedAssetMetadata hosting.ModifiedAssetMetadata
+	resetCache            bool
 }
 
 // DoRequest performs modify operation
@@ -133,11 +134,22 @@ func (op *modifyOp) Do() error {
 				mAM.AssetMetadata.Attrs...); err != nil {
 			return fmt.Errorf("%s => %s", fp, err)
 		}
+
+		// invalidate cache for modified asset
+		if err := doInvalidateCache(op.groupID, op.appID, mAM.AssetMetadata.FilePath, op.resetCache, op.client); err != nil {
+			return err
+		}
+
 		return nil
 	}
 
 	if uploadErr := doUpload(op.groupID, op.appID, op.rootDir, op.client, mAM.AssetMetadata); uploadErr != nil {
 		return uploadErr
+	}
+
+	// invalidate cache for modified asset
+	if err := doInvalidateCache(op.groupID, op.appID, mAM.AssetMetadata.FilePath, op.resetCache, op.client); err != nil {
+		return err
 	}
 
 	return nil
@@ -153,6 +165,14 @@ func doUpload(groupID, appID, rootDir string, client api.StitchClient, am hostin
 
 	if uploadErr := client.UploadAsset(groupID, appID, am.FilePath, am.FileHash, am.FileSize, body, am.Attrs...); uploadErr != nil {
 		return fmt.Errorf(errStrF, am.FilePath, uploadErr)
+	}
+
+	return nil
+}
+
+func doInvalidateCache(groupID, appID, path string, resetCache bool, client api.StitchClient) error {
+	if resetCache {
+		return client.InvalidateCache(groupID, appID, path)
 	}
 
 	return nil
