@@ -52,7 +52,7 @@ func ImportHosting(groupID, appID, rootDir, strategy string, assetMetadataDiffs 
 	}
 
 	for _, modified := range assetMetadataDiffs.ModifiedLocally {
-		opChan <- &modifyOp{baseOp, modified, resetCache}
+		opChan <- &modifyOp{baseOp, modified}
 	}
 
 	close(opChan)
@@ -62,6 +62,12 @@ func ImportHosting(groupID, appID, rootDir, strategy string, assetMetadataDiffs 
 
 	if len(errors) > 0 {
 		return fmt.Errorf("%v error(s) occurred while importing hosting assets", len(errors))
+	}
+
+	if resetCache {
+		if err := client.InvalidateCache(groupID, appID, "/*"); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -117,7 +123,6 @@ func (op *deleteOp) Do() error {
 type modifyOp struct {
 	baseHostingOp
 	modifiedAssetMetadata hosting.ModifiedAssetMetadata
-	resetCache            bool
 }
 
 // DoRequest performs modify operation
@@ -135,21 +140,11 @@ func (op *modifyOp) Do() error {
 			return fmt.Errorf("%s => %s", fp, err)
 		}
 
-		// invalidate cache for modified asset
-		if err := doInvalidateCache(op.groupID, op.appID, mAM.AssetMetadata.FilePath, op.resetCache, op.client); err != nil {
-			return err
-		}
-
 		return nil
 	}
 
 	if uploadErr := doUpload(op.groupID, op.appID, op.rootDir, op.client, mAM.AssetMetadata); uploadErr != nil {
 		return uploadErr
-	}
-
-	// invalidate cache for modified asset
-	if err := doInvalidateCache(op.groupID, op.appID, mAM.AssetMetadata.FilePath, op.resetCache, op.client); err != nil {
-		return err
 	}
 
 	return nil
@@ -165,14 +160,6 @@ func doUpload(groupID, appID, rootDir string, client api.StitchClient, am hostin
 
 	if uploadErr := client.UploadAsset(groupID, appID, am.FilePath, am.FileHash, am.FileSize, body, am.Attrs...); uploadErr != nil {
 		return fmt.Errorf(errStrF, am.FilePath, uploadErr)
-	}
-
-	return nil
-}
-
-func doInvalidateCache(groupID, appID, path string, resetCache bool, client api.StitchClient) error {
-	if resetCache {
-		return client.InvalidateCache(groupID, appID, path)
 	}
 
 	return nil
