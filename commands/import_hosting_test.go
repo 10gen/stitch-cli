@@ -165,7 +165,6 @@ func TestHostingOp(t *testing.T) {
 					true,
 					false,
 				},
-				false,
 			}
 			u.So(t, modify.Do(), gc.ShouldNotBeNil)
 		})
@@ -181,7 +180,6 @@ func TestHostingOp(t *testing.T) {
 				true,
 				false,
 			},
-			false,
 		}
 
 		t.Run("Do should error when client upload fails", func(t *testing.T) {
@@ -217,7 +215,6 @@ func TestHostingOp(t *testing.T) {
 				false,
 				true,
 			},
-			false,
 		}
 
 		t.Run("Do should error when attributes modified and client SetAssetAttributes fails", func(t *testing.T) {
@@ -240,24 +237,6 @@ func TestHostingOp(t *testing.T) {
 
 			attrModifyOp.client = testClient
 			u.So(t, attrModifyOp.Do(), gc.ShouldBeNil)
-		})
-
-		t.Run("Do should call InvalidateCache when resetCache is true", func(t *testing.T) {
-			attrModifyOp.resetCache = true
-			invalidateCacheCalled := false
-
-			testHandler := func(w http.ResponseWriter, r *http.Request) {
-				if r.RequestURI == fmt.Sprintf("/api/admin/v3.0/groups/%s/apps/%s/hosting/cache", attrModifyOp.groupID, attrModifyOp.appID) {
-					invalidateCacheCalled = true
-				}
-				w.WriteHeader(http.StatusNoContent)
-			}
-			testServer := httptest.NewServer(http.HandlerFunc(testHandler))
-			testClient := api.NewStitchClient(api.NewClient(testServer.URL))
-
-			attrModifyOp.client = testClient
-			u.So(t, attrModifyOp.Do(), gc.ShouldBeNil)
-			u.So(t, invalidateCacheCalled, gc.ShouldBeTrue)
 		})
 	})
 
