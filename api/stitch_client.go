@@ -448,7 +448,7 @@ func (sc *basicStitchClient) InvalidateCache(groupID, appID, path string) error 
 			Body: bytes.NewReader(payload),
 		},
 	)
-	return checkStatusNoContent(res, err, "failed to update asset")
+	return checkStatusNoContent(res, err, "failed to invalidate cache")
 }
 
 func checkStatusNoContent(res *http.Response, requestErr error, errMessage string) error {
