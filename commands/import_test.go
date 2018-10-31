@@ -655,15 +655,17 @@ func TestImportCommand(t *testing.T) {
 
 				cachePath := filepath.Join(filepath.Dir(importCommand.flagConfigPath), utils.HostingCacheFileName)
 
-				cacheData, cErr := hosting.CacheFileToAssetCacheData(cachePath)
+				assetCache, cErr := hosting.CacheFileToAssetCache(cachePath)
 				u.So(t, cErr, gc.ShouldBeNil)
 
 				rErr := os.Remove(cachePath)
 				u.So(t, rErr, gc.ShouldBeNil)
 
-				fmt.Println(cacheData)
-				u.So(t, hosting.AssetCacheDataMap(cacheData).Contains(importCommand.flagAppID, "/asset_file0.json"), gc.ShouldBeTrue)
-				u.So(t, hosting.AssetCacheDataMap(cacheData).Contains(importCommand.flagAppID, "/ships/nostromo.json"), gc.ShouldBeTrue)
+				_, ok := assetCache.Get(importCommand.flagAppID, "/asset_file0.json")
+				u.So(t, ok, gc.ShouldBeTrue)
+
+				_, ok = assetCache.Get(importCommand.flagAppID, "/ships/nostromo.json")
+				u.So(t, ok, gc.ShouldBeTrue)
 			})
 		}
 

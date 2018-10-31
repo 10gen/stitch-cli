@@ -29,9 +29,10 @@ func localFileToAssetMetadata(t *testing.T, localPath, rootDir string, assetDesc
 	relPath, pathErr := filepath.Rel(rootDir, localPath)
 	u.So(t, pathErr, gc.ShouldBeNil)
 	filePath := fmt.Sprintf("/%s", relPath)
-	assetMetadata, hashUpdated, famErr := hosting.FileToAssetMetadata(appID, localPath, filePath, info, assetDescriptions[filePath], &hosting.AssetCacheDataMap{})
+	assetCache := hosting.NewAssetCache()
+	assetMetadata, famErr := hosting.FileToAssetMetadata(appID, localPath, filePath, info, assetDescriptions[filePath], assetCache)
 	u.So(t, famErr, gc.ShouldBeNil)
-	u.So(t, hashUpdated, gc.ShouldBeTrue)
+	u.So(t, assetCache.Dirty(), gc.ShouldBeTrue)
 
 	u.So(t, assetMetadata.AppID, gc.ShouldEqual, appID)
 	u.So(t, assetMetadata.FilePath, gc.ShouldEqual, filePath)
@@ -84,23 +85,24 @@ func TestListLocalAssetMetadata(t *testing.T) {
 	u.So(t, info.IsDir(), gc.ShouldBeTrue)
 
 	appID := "3720"
-	assetMetadata, hashCacheData, hashesUpdated, listErr := hosting.ListLocalAssetMetadata(appID, rootDir, assetDescriptions, hosting.AssetCacheDataMap{})
+	assetCache := hosting.NewAssetCache()
+	assetMetadata, listErr := hosting.ListLocalAssetMetadata(appID, rootDir, assetDescriptions, assetCache)
 	u.So(t, listErr, gc.ShouldBeNil)
-	u.So(t, hashesUpdated, gc.ShouldBeTrue)
+	u.So(t, assetCache.Dirty(), gc.ShouldBeTrue)
 	u.So(t, assetMetadata, gc.ShouldResemble, testData)
 
-	u.So(t, hashCacheData.Contains(appID, am0.FilePath), gc.ShouldBeTrue)
+	ace0, ok := assetCache.Get(appID, am0.FilePath)
+	u.So(t, ok, gc.ShouldBeTrue)
 
-	cd0 := hashCacheData.Get(appID, am0.FilePath)
-	u.So(t, cd0.FileHash, gc.ShouldEqual, am0.FileHash)
-	u.So(t, cd0.FilePath, gc.ShouldEqual, am0.FilePath)
-	u.So(t, cd0.FileSize, gc.ShouldEqual, am0.FileSize)
+	u.So(t, ace0.FileHash, gc.ShouldEqual, am0.FileHash)
+	u.So(t, ace0.FilePath, gc.ShouldEqual, am0.FilePath)
+	u.So(t, ace0.FileSize, gc.ShouldEqual, am0.FileSize)
 
-	u.So(t, hashCacheData.Contains(appID, am1.FilePath), gc.ShouldBeTrue)
-	cd1 := hashCacheData.Get(appID, am1.FilePath)
-	u.So(t, cd1.FileHash, gc.ShouldEqual, am1.FileHash)
-	u.So(t, cd1.FilePath, gc.ShouldEqual, am1.FilePath)
-	u.So(t, cd1.FileSize, gc.ShouldEqual, am1.FileSize)
+	ace1, ok := assetCache.Get(appID, am1.FilePath)
+	u.So(t, ok, gc.ShouldBeTrue)
+	u.So(t, ace1.FileHash, gc.ShouldEqual, am1.FileHash)
+	u.So(t, ace1.FilePath, gc.ShouldEqual, am1.FilePath)
+	u.So(t, ace1.FileSize, gc.ShouldEqual, am1.FileSize)
 }
 
 var jsonAttr = hosting.AssetAttribute{
@@ -164,26 +166,26 @@ func TestGetModifiedAssetMetadata(t *testing.T) {
 	}
 }
 
-func TestCacheFileToAssetCacheData(t *testing.T) {
+func TestCacheFileToAssetCache(t *testing.T) {
 	path := "../testdata/configs/.asset_cache_test_data.json"
 	absPath, pErr := filepath.Abs(path)
 	u.So(t, pErr, gc.ShouldBeNil)
 
-	cacheData, cErr := hosting.CacheFileToAssetCacheData(absPath)
+	assetCache, cErr := hosting.CacheFileToAssetCache(absPath)
 	u.So(t, cErr, gc.ShouldBeNil)
 
-	for appID, assetCacheData := range cacheData {
+	for appID, appEntry := range assetCache.Entries() {
 		u.So(t, len(appID), gc.ShouldBeGreaterThan, 0)
-		for filePath, cd := range assetCacheData {
-			u.So(t, cd.FilePath, gc.ShouldEqual, filePath)
-			u.So(t, cd.FileSize, gc.ShouldBeGreaterThan, 0)
-			u.So(t, len(cd.FileHash), gc.ShouldBeGreaterThan, 0)
-			u.So(t, cd.LastModified, gc.ShouldBeGreaterThan, 0)
+		for filePath, ace := range appEntry {
+			u.So(t, ace.FilePath, gc.ShouldEqual, filePath)
+			u.So(t, ace.FileSize, gc.ShouldBeGreaterThan, 0)
+			u.So(t, len(ace.FileHash), gc.ShouldBeGreaterThan, 0)
+			u.So(t, ace.LastModified, gc.ShouldBeGreaterThan, 0)
 		}
 	}
 }
 
-func assertAssetCacheDataEqual(t *testing.T, actual, expected hosting.AssetCacheData) {
+func assertAssetCacheEntryEqual(t *testing.T, actual, expected hosting.AssetCacheEntry) {
 	u.So(t, actual.FilePath, gc.ShouldEqual, expected.FilePath)
 	u.So(t, actual.LastModified, gc.ShouldEqual, expected.LastModified)
 	u.So(t, actual.FileSize, gc.ShouldEqual, expected.FileSize)
@@ -200,19 +202,17 @@ func TestUpdateCacheFile(t *testing.T) {
 	lastModified := int64(10887)
 	fileSize := int64(12)
 	fileHash := "l3in5h1p"
-	assetCacheData := hosting.AssetCacheData{
+	assetCacheEntry := hosting.AssetCacheEntry{
 		filePath,
 		lastModified,
 		fileSize,
 		fileHash,
 	}
-	cacheData := hosting.AssetCacheDataMap{
-		appID: {
-			filePath: assetCacheData,
-		},
-	}
 
-	uErr := hosting.UpdateCacheFile(absConfigPath, cacheData)
+	assetCache := hosting.NewAssetCache()
+	assetCache.Set(appID, assetCacheEntry)
+
+	uErr := hosting.UpdateCacheFile(absConfigPath, assetCache)
 	u.So(t, uErr, gc.ShouldBeNil)
 
 	defer func() {
@@ -220,67 +220,66 @@ func TestUpdateCacheFile(t *testing.T) {
 		u.So(t, rErr, gc.ShouldBeNil)
 	}()
 
-	updatedCDMap, cErr := hosting.CacheFileToAssetCacheData(absConfigPath)
+	updatedCache, cErr := hosting.CacheFileToAssetCache(absConfigPath)
 	u.So(t, cErr, gc.ShouldBeNil)
 
-	updatedCacheData := hosting.AssetCacheDataMap(updatedCDMap)
-	u.So(t, updatedCacheData.Contains(appID, filePath), gc.ShouldBeTrue)
+	ace, ok := updatedCache.Get(appID, filePath)
+	u.So(t, ok, gc.ShouldBeTrue)
 
-	assertAssetCacheDataEqual(t, updatedCacheData.Get(appID, filePath), assetCacheData)
+	assertAssetCacheEntryEqual(t, ace, assetCacheEntry)
 
 	t.Run("when a second update occurs the original data should be intact", func(t *testing.T) {
 		newFilePath := "slowShip"
-		newAssetCacheData := hosting.AssetCacheData{
+		newAssetCacheEntry := hosting.AssetCacheEntry{
 			newFilePath,
 			lastModified,
 			fileSize,
 			fileHash,
 		}
-		updatedCDMap := hosting.AssetCacheDataMap(cacheData).Set(appID, newFilePath, newAssetCacheData)
-		updatedCacheData = hosting.AssetCacheDataMap(updatedCDMap)
+		updatedCache.Set(appID, newAssetCacheEntry)
 
-		u.So(t, updatedCacheData.Contains(appID, filePath), gc.ShouldBeTrue)
-		u.So(t, updatedCacheData.Contains(appID, newFilePath), gc.ShouldBeTrue)
+		ace, ok := updatedCache.Get(appID, filePath)
+		u.So(t, ok, gc.ShouldBeTrue)
+		assertAssetCacheEntryEqual(t, ace, assetCacheEntry)
+		aceNew, ok := updatedCache.Get(appID, newFilePath)
+		assertAssetCacheEntryEqual(t, aceNew, newAssetCacheEntry)
+		u.So(t, ok, gc.ShouldBeTrue)
 	})
 }
 
-func TestAssetCacheDataMap(t *testing.T) {
+func TestAssetCache(t *testing.T) {
 	appID := "3720"
 	filePath := "/fast/ship"
 	lastModified := int64(10887)
 	fileSize := int64(12)
 	fileHash := "l3in5h1p"
-	assetCacheData := hosting.AssetCacheData{
+	assetCacheEntry := hosting.AssetCacheEntry{
 		filePath,
 		lastModified,
 		fileSize,
 		fileHash,
 	}
-	cacheData := hosting.AssetCacheDataMap{
-		appID: {
-			filePath: assetCacheData,
-		},
-	}
+	assetCache := hosting.NewAssetCache()
+	assetCache.Set(appID, assetCacheEntry)
 
-	t.Run("when Contains returns true Get should return the appropriate AssetCacheData", func(t *testing.T) {
-		u.So(t, cacheData.Contains(appID, filePath), gc.ShouldBeTrue)
-		cd := cacheData.Get(appID, filePath)
-		assertAssetCacheDataEqual(t, cd, assetCacheData)
+	t.Run("Get should return the appropriate AssetCacheEntry and ok", func(t *testing.T) {
+		ace, ok := assetCache.Get(appID, filePath)
+		u.So(t, ok, gc.ShouldBeTrue)
+		assertAssetCacheEntryEqual(t, ace, assetCacheEntry)
 	})
 
-	t.Run("when Contains returns false Get should return empty AssetCacheData", func(t *testing.T) {
-		u.So(t, cacheData.Contains(appID, "/uhhh/me"), gc.ShouldBeFalse)
-		u.So(t, cacheData.Contains("f4r7!", filePath), gc.ShouldBeFalse)
+	t.Run("Get should return empty AssetCacheEntry and false when it does not contain an entry", func(t *testing.T) {
+		ace, ok := assetCache.Get(appID, "/uhhhh/me")
+		u.So(t, ok, gc.ShouldBeFalse)
+		assertAssetCacheEntryEqual(t, ace, hosting.AssetCacheEntry{})
 
-		cd := cacheData.Get(appID, "/uhhh/me")
-		assertAssetCacheDataEqual(t, cd, hosting.AssetCacheData{})
-
-		cd = cacheData.Get("f4r7!", filePath)
-		assertAssetCacheDataEqual(t, cd, hosting.AssetCacheData{})
+		ace, ok = assetCache.Get(appID, "f4r7!")
+		u.So(t, ok, gc.ShouldBeFalse)
+		assertAssetCacheEntryEqual(t, ace, hosting.AssetCacheEntry{})
 	})
 
 	fp0 := "/hello/there"
-	acd := hosting.AssetCacheData{
+	setEntry := hosting.AssetCacheEntry{
 		fp0,
 		int64(10887),
 		int64(66),
@@ -288,37 +287,38 @@ func TestAssetCacheDataMap(t *testing.T) {
 	}
 
 	t.Run("Set should work for an existing appID", func(t *testing.T) {
-		cd := cacheData.Set(appID, fp0, acd).Get(appID, fp0)
-		assertAssetCacheDataEqual(t, cd, acd)
+		assetCache.Set(appID, setEntry)
+		ace, ok := assetCache.Get(appID, fp0)
+		u.So(t, ok, gc.ShouldBeTrue)
+		assertAssetCacheEntryEqual(t, ace, setEntry)
 	})
 
 	t.Run("Set should work for a non-existing appID", func(t *testing.T) {
 		appID1 := "2187"
-		cd := cacheData.Set(appID1, fp0, acd).Get(appID1, fp0)
-		assertAssetCacheDataEqual(t, cd, acd)
+		assetCache.Set(appID1, setEntry)
+		ace, ok := assetCache.Get(appID1, fp0)
+		u.So(t, ok, gc.ShouldBeTrue)
+		assertAssetCacheEntryEqual(t, ace, setEntry)
 	})
 }
 
-func TestRoundTripAssetCacheData(t *testing.T) {
-	cacheData := hosting.AssetCacheData{
+func TestRoundTripAssetCacheEntry(t *testing.T) {
+	cacheEntry := hosting.AssetCacheEntry{
 		"/fast/ship",
 		int64(10887),
 		int64(12),
 		"l3in5h1p",
 	}
 
-	md, mErr := json.Marshal(cacheData)
+	md, mErr := json.Marshal(cacheEntry)
 	u.So(t, mErr, gc.ShouldBeNil)
 
-	var cd hosting.AssetCacheData
-	u.So(t, json.Unmarshal(md, &cd), gc.ShouldBeNil)
+	var ace hosting.AssetCacheEntry
+	u.So(t, json.Unmarshal(md, &ace), gc.ShouldBeNil)
 
-	u.So(t, cacheData.FilePath, gc.ShouldEqual, cd.FilePath)
-	u.So(t, cacheData.LastModified, gc.ShouldEqual, cd.LastModified)
-	u.So(t, cacheData.FileSize, gc.ShouldEqual, cd.FileSize)
-	u.So(t, cacheData.FileHash, gc.ShouldEqual, cd.FileHash)
+	assertAssetCacheEntryEqual(t, cacheEntry, ace)
 
-	u.So(t, cacheData, gc.ShouldResemble, cd)
+	u.So(t, cacheEntry, gc.ShouldResemble, ace)
 }
 
 func TestDiffAssetMetadata(t *testing.T) {

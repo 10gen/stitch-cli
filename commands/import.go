@@ -236,23 +236,23 @@ func (ic *ImportCommand) importApp() error {
 			return cPErr
 		}
 
-		cacheData, cErr := hosting.CacheFileToAssetCacheData(cachePath)
+		assetCache, cErr := hosting.CacheFileToAssetCache(cachePath)
 		if cErr != nil {
 			if !os.IsNotExist(cErr) {
 				return cErr
 			}
-			cacheData = hosting.AssetCacheDataMap{}
+			assetCache = hosting.NewAssetCache()
 		}
 
-		localAssetMetadata, cacheData, hashesUpdated, aMErr :=
-			hosting.ListLocalAssetMetadata(appInstanceData.AppID(), rootDir, assetDescs, cacheData)
+		localAssetMetadata, aMErr :=
+			hosting.ListLocalAssetMetadata(appInstanceData.AppID(), rootDir, assetDescs, assetCache)
 
 		if aMErr != nil {
 			return errIncludeHosting(fmt.Errorf("error processing local assets %s: %s", rootDir, aMErr))
 		}
 
-		if hashesUpdated {
-			if uError := hosting.UpdateCacheFile(cachePath, cacheData); uError != nil {
+		if assetCache.Dirty() {
+			if uError := hosting.UpdateCacheFile(cachePath, assetCache); uError != nil {
 				ic.UI.Error(uError.Error())
 			}
 		}

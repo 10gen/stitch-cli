@@ -1,6 +1,7 @@
 package hosting
 
 import (
+	"encoding/json"
 	"path"
 	"sort"
 	"strings"
@@ -185,42 +186,75 @@ func NewAssetMetadataDiffs(added, deleted []AssetMetadata, modified []ModifiedAs
 	}
 }
 
-// AssetCacheData represents the data associated with an AssetMetadata needed for caching
-type AssetCacheData struct {
+// AssetCacheEntry represents the relevant data for caching
+type AssetCacheEntry struct {
 	FilePath     string `json:"path"`
 	LastModified int64  `json:"last_modified,omitempty"`
 	FileSize     int64  `json:"size,omitempty"`
 	FileHash     string `json:"hash,omitempty"`
 }
 
-// AssetCacheDataMap represents a map of appID to filePath to AssetCacheData
-type AssetCacheDataMap map[string]map[string]AssetCacheData
+// entryMap is a map of appID to filePath to AssetCacheEntry
+type entryMap map[string]map[string]AssetCacheEntry
 
-// Contains checks if the map contains an appID and filePath
-func (acdm AssetCacheDataMap) Contains(appID, filePath string) bool {
-	if acd, ok := acdm[appID]; ok {
-		if _, ok := acd[filePath]; ok {
-			return true
+// AssetCache represents the entires that make up the cache
+type AssetCache interface {
+	Dirty() bool
+	Entries() entryMap
+	Get(appID, filePath string) (AssetCacheEntry, bool)
+	Set(appID string, ace AssetCacheEntry)
+}
+
+type basicAssetCache struct {
+	dirty   bool
+	entries entryMap
+}
+
+// Dirty returns whether or not this basicAssetCache is dirty
+func (ac *basicAssetCache) Dirty() bool {
+	return ac.dirty
+}
+
+// Entries returns the entires for this assetCache
+func (ac *basicAssetCache) Entries() entryMap {
+	return ac.entries
+}
+
+// Get will get an AssetCacheEntry by appID and filePath or return an empty AssetCacheEntry if one does not exist
+// returns true if the entry exists, false otherwise
+func (ac *basicAssetCache) Get(appID, filePath string) (AssetCacheEntry, bool) {
+	if aces, ok := ac.entries[appID]; ok {
+		if ace, ok := aces[filePath]; ok {
+			return ace, true
 		}
 	}
-
-	return false
+	return AssetCacheEntry{}, false
 }
 
-// Get will get an AssetCacheData by appID and filePath or return an empty AssetCacheData if one does not exist
-func (acdm AssetCacheDataMap) Get(appID, filePath string) AssetCacheData {
-	var cacheData AssetCacheData
-	if acdm.Contains(appID, filePath) {
-		cacheData = acdm[appID][filePath]
+// Set will set an appID's filePath's AssetCacheEntry by appID and the filePath inside the entry
+// or add them if they don't exist already
+func (ac *basicAssetCache) Set(appID string, ace AssetCacheEntry) {
+	if _, ok := ac.entries[appID]; !ok {
+		ac.entries[appID] = map[string]AssetCacheEntry{}
 	}
-	return cacheData
+	ac.entries[appID][ace.FilePath] = ace
+	ac.dirty = true
 }
 
-// Set will set an appID's filePath's AssetCacheData by appID and filePath or add them if they don't exist already
-func (acdm AssetCacheDataMap) Set(appID, filePath string, acd AssetCacheData) AssetCacheDataMap {
-	if _, ok := acdm[appID]; !ok {
-		acdm[appID] = map[string]AssetCacheData{}
+// MarshalJSON marshals the entries of this basicAssetCache
+func (ac *basicAssetCache) MarshalJSON() ([]byte, error) {
+	return json.Marshal(ac.entries)
+}
+
+// UnmarshalJSON unmarshals JSON into the basicAssetCache entries
+func (ac *basicAssetCache) UnmarshalJSON(cacheEntries []byte) error {
+	return json.Unmarshal(cacheEntries, &ac.entries)
+}
+
+//NewAssetCache returns a new empty AssetCache
+func NewAssetCache() AssetCache {
+	return &basicAssetCache{
+		false,
+		entryMap{},
 	}
-	acdm[appID][filePath] = acd
-	return acdm
 }

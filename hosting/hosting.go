@@ -11,20 +11,19 @@ import (
 
 // ListLocalAssetMetadata walks all files from the rootDirectory
 // and builds []AssetMetadata from those files
-// returns the assetMetadata, cacheData and whether or not the cacheData was altered
-func ListLocalAssetMetadata(appID, rootDirectory string, assetDescriptions map[string]AssetDescription, cacheData AssetCacheDataMap) ([]AssetMetadata, AssetCacheDataMap, bool, error) {
+// returns the assetMetadata and possibly alters the assetCache
+func ListLocalAssetMetadata(appID, rootDirectory string, assetDescriptions map[string]AssetDescription, assetCache AssetCache) ([]AssetMetadata, error) {
 	var assetMetadata []AssetMetadata
 
-	hashesUpdated := false
-	err := filepath.Walk(rootDirectory, buildAssetMetadata(appID, &assetMetadata, rootDirectory, assetDescriptions, &cacheData, &hashesUpdated))
+	err := filepath.Walk(rootDirectory, buildAssetMetadata(appID, &assetMetadata, rootDirectory, assetDescriptions, assetCache))
 	if err != nil {
-		return nil, AssetCacheDataMap{}, false, err
+		return nil, err
 	}
 
-	return assetMetadata, cacheData, hashesUpdated, nil
+	return assetMetadata, nil
 }
 
-func buildAssetMetadata(appID string, assetMetadata *[]AssetMetadata, rootDir string, assetDescriptions map[string]AssetDescription, cacheData *AssetCacheDataMap, hashesUpdated *bool) filepath.WalkFunc {
+func buildAssetMetadata(appID string, assetMetadata *[]AssetMetadata, rootDir string, assetDescriptions map[string]AssetDescription, assetCache AssetCache) filepath.WalkFunc {
 	return func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -39,12 +38,10 @@ func buildAssetMetadata(appID string, assetMetadata *[]AssetMetadata, rootDir st
 			if assetDescriptions != nil {
 				assetDesc = assetDescriptions[assetPath]
 			}
-			am, hashUpdated, fileErr := FileToAssetMetadata(appID, path, assetPath, info, assetDesc, cacheData)
+			am, fileErr := FileToAssetMetadata(appID, path, assetPath, info, assetDesc, assetCache)
 			if fileErr != nil {
 				return fileErr
 			}
-
-			*hashesUpdated = *hashesUpdated || hashUpdated
 
 			*assetMetadata = append(*assetMetadata, *am)
 		}
@@ -54,30 +51,29 @@ func buildAssetMetadata(appID string, assetMetadata *[]AssetMetadata, rootDir st
 
 // FileToAssetMetadata generates a file hash for the given file
 // and generates the assetAttributes and creates an AssetMetadata from these
-func FileToAssetMetadata(appID, path, assetPath string, info os.FileInfo, desc AssetDescription, cacheData *AssetCacheDataMap) (*AssetMetadata, bool, error) {
+// if the file hash has changed this will update the assetCache
+func FileToAssetMetadata(appID, path, assetPath string, info os.FileInfo, desc AssetDescription, assetCache AssetCache) (*AssetMetadata, error) {
 	// check cache for file hash
-	if cacheData.Contains(appID, assetPath) {
-		acd := cacheData.Get(appID, assetPath)
-
-		if acd.FileSize == info.Size() && acd.LastModified == info.ModTime().Unix() {
-			return NewAssetMetadata(appID, assetPath, acd.FileHash, info.Size(), desc.Attrs), false, nil
+	if ace, ok := assetCache.Get(appID, assetPath); ok {
+		if ace.FileSize == info.Size() && ace.LastModified == info.ModTime().Unix() {
+			return NewAssetMetadata(appID, assetPath, ace.FileHash, info.Size(), desc.Attrs), nil
 		}
 	}
 
 	// file hash was not cached so generate one
 	generated, err := utils.GenerateFileHashStr(path)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	cacheData.Set(appID, assetPath, AssetCacheData{
+	assetCache.Set(appID, AssetCacheEntry{
 		assetPath,
 		info.ModTime().Unix(),
 		info.Size(),
 		generated,
 	})
 
-	return NewAssetMetadata(appID, assetPath, generated, info.Size(), desc.Attrs), true, nil
+	return NewAssetMetadata(appID, assetPath, generated, info.Size(), desc.Attrs), nil
 }
 
 // MetadataFileToAssetDescriptions attempts to open the file at the path given
@@ -104,9 +100,9 @@ func MetadataFileToAssetDescriptions(path string) (map[string]AssetDescription, 
 	return descM, nil
 }
 
-// CacheFileToAssetCacheData attempts to open the file at the path given
-// and build a map of appID to a map of file path strings to a map of cache data
-func CacheFileToAssetCacheData(path string) (AssetCacheDataMap, error) {
+// CacheFileToAssetCache attempts to open the file at the path given
+// and build a map of appID to a map of file path strings a AssetCache
+func CacheFileToAssetCache(path string) (AssetCache, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -114,18 +110,18 @@ func CacheFileToAssetCacheData(path string) (AssetCacheDataMap, error) {
 	defer f.Close()
 
 	dec := json.NewDecoder(f)
-	cacheData := AssetCacheDataMap{}
-	decErr := dec.Decode(&cacheData)
+	assetCache := basicAssetCache{}
+	decErr := dec.Decode(&assetCache)
 	if decErr != nil {
 		return nil, decErr
 	}
-	return cacheData, nil
+	return &assetCache, nil
 }
 
 // UpdateCacheFile attempts to update the file at the path given
-// with the AssetCacheData passed in
-func UpdateCacheFile(path string, cacheData AssetCacheDataMap) error {
-	mCacheData, mErr := json.Marshal(cacheData)
+// with the AssetCache passed in
+func UpdateCacheFile(path string, assetCache AssetCache) error {
+	mAssetCache, mErr := json.Marshal(assetCache)
 	if mErr != nil {
 		return mErr
 	}
@@ -135,7 +131,7 @@ func UpdateCacheFile(path string, cacheData AssetCacheDataMap) error {
 		return err
 	}
 
-	_, wErr := f.Write(mCacheData)
+	_, wErr := f.Write(mAssetCache)
 	if wErr != nil {
 		return wErr
 	}
@@ -144,7 +140,8 @@ func UpdateCacheFile(path string, cacheData AssetCacheDataMap) error {
 }
 
 // DiffAssetMetadata compares a local and remote []AssetMetadata and returns a AssetMetadataDiffs
-// which contains information about the difrences between the two
+// which contains information about the differences between the two
+// if the merge paramater is true than me ignore deleted assets
 func DiffAssetMetadata(local, remote []AssetMetadata, merge bool) *AssetMetadataDiffs {
 	var addedLocally []AssetMetadata
 	var modifiedLocally []ModifiedAssetMetadata
