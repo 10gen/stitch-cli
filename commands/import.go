@@ -228,7 +228,7 @@ func (ic *ImportCommand) importApp() error {
 	if ic.flagIncludeHosting {
 		assetDescs, fileErr := hosting.MetadataFileToAssetDescriptions(filepath.Join(appPath, utils.HostingAttributes))
 		if fileErr != nil {
-			return errIncludeHosting(fileErr)
+			return errIncludeHosting(fmt.Errorf("error loading metadata.json file: %v", fileErr))
 		}
 
 		cachePath, cPErr := getAssetCachePath(ic.flagConfigPath)

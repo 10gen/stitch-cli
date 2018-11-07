@@ -34,11 +34,7 @@ func buildAssetMetadata(appID string, assetMetadata *[]AssetMetadata, rootDir st
 				return pathErr
 			}
 			assetPath := fmt.Sprintf("/%s", relPath)
-			var assetDesc AssetDescription
-			if assetDescriptions != nil {
-				assetDesc = assetDescriptions[assetPath]
-			}
-			am, fileErr := FileToAssetMetadata(appID, path, assetPath, info, assetDesc, assetCache)
+			am, fileErr := FileToAssetMetadata(appID, path, assetPath, info, assetDescriptions, assetCache)
 			if fileErr != nil {
 				return fileErr
 			}
@@ -52,7 +48,22 @@ func buildAssetMetadata(appID string, assetMetadata *[]AssetMetadata, rootDir st
 // FileToAssetMetadata generates a file hash for the given file
 // and generates the assetAttributes and creates an AssetMetadata from these
 // if the file hash has changed this will update the assetCache
-func FileToAssetMetadata(appID, path, assetPath string, info os.FileInfo, desc AssetDescription, assetCache AssetCache) (*AssetMetadata, error) {
+func FileToAssetMetadata(appID, path, assetPath string, info os.FileInfo, descs map[string]AssetDescription, assetCache AssetCache) (*AssetMetadata, error) {
+	var desc AssetDescription
+	var hasAssetDesc bool
+	if descs != nil {
+		desc, hasAssetDesc = descs[assetPath]
+	}
+	if !hasAssetDesc {
+		if extension := filepath.Ext(assetPath); extension != "" {
+			if contentType, ok := utils.GetContentTypeByExtension(extension[1:]); ok {
+				desc.Attrs = []AssetAttribute{
+					{Name: "Content-Type", Value: contentType},
+				}
+			}
+		}
+	}
+
 	// check cache for file hash
 	if ace, ok := assetCache.Get(appID, assetPath); ok {
 		if ace.FileSize == info.Size() && ace.LastModified == info.ModTime().Unix() {

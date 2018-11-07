@@ -30,7 +30,7 @@ func localFileToAssetMetadata(t *testing.T, localPath, rootDir string, assetDesc
 	u.So(t, pathErr, gc.ShouldBeNil)
 	filePath := fmt.Sprintf("/%s", relPath)
 	assetCache := hosting.NewAssetCache()
-	assetMetadata, famErr := hosting.FileToAssetMetadata(appID, localPath, filePath, info, assetDescriptions[filePath], assetCache)
+	assetMetadata, famErr := hosting.FileToAssetMetadata(appID, localPath, filePath, info, assetDescriptions, assetCache)
 	u.So(t, famErr, gc.ShouldBeNil)
 	u.So(t, assetCache.Dirty(), gc.ShouldBeTrue)
 
@@ -46,9 +46,12 @@ func TestListLocalAssetMetadata(t *testing.T) {
 	var testData []hosting.AssetMetadata
 	path0 := "../testdata/full_app/hosting/files/asset_file0.json"
 	path1 := "../testdata/full_app/hosting/files/ships/nostromo.json"
+	path2 := "../testdata/full_app/hosting/files/asset_file1.html"
 	fp0, fErr := filepath.Abs(path0)
 	u.So(t, fErr, gc.ShouldBeNil)
 	fp1, fErr := filepath.Abs(path1)
+	u.So(t, fErr, gc.ShouldBeNil)
+	fp2, fErr := filepath.Abs(path2)
 	u.So(t, fErr, gc.ShouldBeNil)
 
 	rootDir, fErr := filepath.Abs("../testdata/full_app/hosting/files")
@@ -72,8 +75,8 @@ func TestListLocalAssetMetadata(t *testing.T) {
 
 	am0 := localFileToAssetMetadata(t, fp0, rootDir, assetDescriptions)
 	am1 := localFileToAssetMetadata(t, fp1, rootDir, assetDescriptions)
-	testData = append(testData, *am0)
-	testData = append(testData, *am1)
+	am2 := localFileToAssetMetadata(t, fp2, rootDir, assetDescriptions)
+	testData = append(testData, *am0, *am2, *am1)
 
 	u.So(t, fErr, gc.ShouldBeNil)
 	file, err := os.Open(rootDir)
