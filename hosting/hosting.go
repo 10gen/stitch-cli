@@ -34,13 +34,22 @@ func buildAssetMetadata(appID string, assetMetadata *[]AssetMetadata, rootDir st
 				return pathErr
 			}
 			assetPath := fmt.Sprintf("/%s", relPath)
-			am, fileErr := FileToAssetMetadata(appID, path, assetPath, info, assetDescriptions, assetCache)
+
+			var desc *AssetDescription
+			if assetDescriptions != nil {
+				if descEntry, ok := assetDescriptions[assetPath]; ok {
+					desc = &descEntry
+				}
+			}
+
+			am, fileErr := FileToAssetMetadata(appID, path, assetPath, info, desc, assetCache)
 			if fileErr != nil {
 				return fileErr
 			}
 
 			*assetMetadata = append(*assetMetadata, *am)
 		}
+
 		return nil
 	}
 }
@@ -48,16 +57,17 @@ func buildAssetMetadata(appID string, assetMetadata *[]AssetMetadata, rootDir st
 // FileToAssetMetadata generates a file hash for the given file
 // and generates the assetAttributes and creates an AssetMetadata from these
 // if the file hash has changed this will update the assetCache
-func FileToAssetMetadata(appID, path, assetPath string, info os.FileInfo, descs map[string]AssetDescription, assetCache AssetCache) (*AssetMetadata, error) {
-	var desc AssetDescription
-	var hasAssetDesc bool
-	if descs != nil {
-		desc, hasAssetDesc = descs[assetPath]
-	}
-	if !hasAssetDesc {
+func FileToAssetMetadata(appID, path, assetPath string, info os.FileInfo, desc *AssetDescription, assetCache AssetCache) (*AssetMetadata, error) {
+
+	attrs := []AssetAttribute{}
+	if desc != nil {
+		attrs = desc.Attrs
+	} else {
+		// This asset doesn't have an entry in the metadata. Try to assign a Content-Type
+		// based on the file extension, if possible.
 		if extension := filepath.Ext(assetPath); extension != "" {
 			if contentType, ok := utils.GetContentTypeByExtension(extension[1:]); ok {
-				desc.Attrs = []AssetAttribute{
+				attrs = []AssetAttribute{
 					{Name: "Content-Type", Value: contentType},
 				}
 			}
@@ -67,7 +77,7 @@ func FileToAssetMetadata(appID, path, assetPath string, info os.FileInfo, descs 
 	// check cache for file hash
 	if ace, ok := assetCache.Get(appID, assetPath); ok {
 		if ace.FileSize == info.Size() && ace.LastModified == info.ModTime().Unix() {
-			return NewAssetMetadata(appID, assetPath, ace.FileHash, info.Size(), desc.Attrs), nil
+			return NewAssetMetadata(appID, assetPath, ace.FileHash, info.Size(), attrs, info.ModTime().Unix()), nil
 		}
 	}
 
@@ -84,7 +94,7 @@ func FileToAssetMetadata(appID, path, assetPath string, info os.FileInfo, descs 
 		generated,
 	})
 
-	return NewAssetMetadata(appID, assetPath, generated, info.Size(), desc.Attrs), nil
+	return NewAssetMetadata(appID, assetPath, generated, info.Size(), attrs, info.ModTime().Unix()), nil
 }
 
 // MetadataFileToAssetDescriptions attempts to open the file at the path given
