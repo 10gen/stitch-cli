@@ -52,6 +52,7 @@ func TestCloudCommands(t *testing.T) {
 		"--yes",
 	}
 	out, err := exec.Command("go", importArgs...).Output()
+	t.Logf("Output from import command: '%s'", string(out))
 	u.So(t, err, gc.ShouldBeNil)
 
 	importOut := string(out)
