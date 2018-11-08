@@ -259,7 +259,7 @@ func (ic *ImportCommand) importApp() error {
 
 		remoteAssetMetadata, rAMErr := stitchClient.ListAssetsForAppID(app.GroupID, app.ID)
 		if rAMErr != nil {
-			return errIncludeHosting(fmt.Errorf("error retrieving remote assets: %s", aMErr))
+			return errIncludeHosting(fmt.Errorf("error retrieving remote assets: %s", rAMErr))
 		}
 
 		assetMetadataDiffs = hosting.DiffAssetMetadata(localAssetMetadata, remoteAssetMetadata, ic.flagStrategy == importStrategyMerge)
