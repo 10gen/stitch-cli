@@ -20,6 +20,18 @@ func ListLocalAssetMetadata(appID, rootDirectory string, assetDescriptions map[s
 		return nil, err
 	}
 
+	metadataOnDisk := make(map[string]AssetMetadata)
+
+	for _, am := range assetMetadata {
+		metadataOnDisk[am.FilePath] = am
+	}
+
+	for key, _ := range assetDescriptions {
+		if _, ok := metadataOnDisk[key]; !ok {
+			return nil, fmt.Errorf("could not find file for %s specified in metadata", key)
+		}
+	}
+
 	return assetMetadata, nil
 }
 
