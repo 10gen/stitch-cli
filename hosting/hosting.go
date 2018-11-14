@@ -26,7 +26,7 @@ func ListLocalAssetMetadata(appID, rootDirectory string, assetDescriptions map[s
 		metadataOnDisk[am.FilePath] = am
 	}
 
-	for key, _ := range assetDescriptions {
+	for key := range assetDescriptions {
 		if _, ok := metadataOnDisk[key]; !ok {
 			return nil, fmt.Errorf("file '%s' has an entry in metadata file, but does not appear in files directory", key)
 		}

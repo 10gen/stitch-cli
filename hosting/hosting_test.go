@@ -107,7 +107,7 @@ func TestListLocalAssetMetadata(t *testing.T) {
 			Attrs:    []hosting.AssetAttribute{jsonAttr},
 		},
 	}
-	assetMetadata, listErr = hosting.ListLocalAssetMetadata(appID, rootDir, assetDescriptions, assetCache)
+	_, listErr = hosting.ListLocalAssetMetadata(appID, rootDir, assetDescriptions, assetCache)
 	expectedError := fmt.Sprintf("file '%s' has an entry in metadata file, but does not appear in files directory", path3)
 	u.So(t, listErr.Error(), gc.ShouldEqual, expectedError)
 
