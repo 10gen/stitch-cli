@@ -108,7 +108,8 @@ func TestListLocalAssetMetadata(t *testing.T) {
 		},
 	}
 	assetMetadata, listErr = hosting.ListLocalAssetMetadata(appID, rootDir, assetDescriptions, assetCache)
-	u.So(t, listErr, gc.ShouldNotBeNil)
+	expectedError := fmt.Sprintf("file '%s' has an entry in metadata file, but does not appear in files directory", path3)
+	u.So(t, listErr.Error(), gc.ShouldEqual, expectedError)
 
 	t.Run("asset cache should be updated from local listing", func(t *testing.T) {
 		entry, ok := assetCache.Get(testAppID, path0)
