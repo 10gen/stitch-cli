@@ -348,15 +348,61 @@ func TestImportNewApp(t *testing.T) {
 
 		for _, tc := range []testCase{
 			{
+				Description:      "uses location and deployment model from config file as suggested default",
+				Args:             []string{"--path=../testdata/template_app_with_cluster"},
+				ExpectedExitCode: 1,
+				StitchClient: u.MockStitchClient{
+					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
+						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
+					},
+					FetchAppsByGroupIDFn: func(groupID string) ([]*models.App, error) {
+						return []*models.App{}, nil
+					},
+					FetchAppByClientAppIDFn: func(clientAppID string) (*models.App, error) {
+						return nil, api.ErrAppNotFound{ClientAppID: clientAppID}
+					},
+				},
+			},
+		} {
+			t.Run(tc.Description, func(t *testing.T) {
+				importCommand, mockUI := setup()
+
+				// Mock responses for prompts
+				confirmCreateApp := "y\n"
+				enterAppName := "My-Test-app\n"
+				enterLocation := "US-VA"
+				enterDeploymentModel := "GLOBAL"
+				mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName + enterLocation + enterDeploymentModel)
+				importCommand.stitchClient = &tc.StitchClient
+
+				writeToDirectoryCallCount := 0
+				importCommand.writeToDirectory = func(dest string, zipData io.Reader, overwrite bool) error {
+					writeToDirectoryCallCount++
+					return nil
+				}
+
+				writeAppConfigCallCount := 0
+				importCommand.writeAppConfigToFile = func(dest string, app models.AppInstanceData) error {
+					writeAppConfigCallCount++
+					return nil
+				}
+
+				exitCode := importCommand.Run(append([]string{"--project-id=59dbcb07127ab4131c54e810"}, tc.Args...))
+				u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
+
+				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "Location [IE]:")
+				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "Deployment Model [LOCAL]:")
+			})
+		}
+
+		for _, tc := range []testCase{
+			{
 				Description:      "returns an error when an invalid location is entered",
 				Args:             []string{"--path=../testdata/new_app"},
 				ExpectedExitCode: 1,
 				StitchClient: u.MockStitchClient{
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
-					},
-					CreateEmptyAppFn: func(groupID, appName string, locationName string, deploymentModelName string) (*models.App, error) {
-						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
 					},
 					FetchAppsByGroupIDFn: func(groupID string) ([]*models.App, error) {
 						return []*models.App{}, nil
@@ -372,13 +418,10 @@ func TestImportNewApp(t *testing.T) {
 			{
 				Description:      "returns an error when an invalid deployment model is entered",
 				Args:             []string{"--path=../testdata/new_app"},
-				ExpectedExitCode: 0,
+				ExpectedExitCode: 1,
 				StitchClient: u.MockStitchClient{
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
-					},
-					CreateEmptyAppFn: func(groupID, appName string, locationName string, deploymentModelName string) (*models.App, error) {
-						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
 					},
 					FetchAppsByGroupIDFn: func(groupID string) ([]*models.App, error) {
 						return []*models.App{}, nil

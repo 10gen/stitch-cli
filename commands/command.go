@@ -277,6 +277,7 @@ func (c *BaseCommand) Ask(query string, defaultVal string) (string, error) {
 	}
 }
 
+// AskWithOptions is used to prompt user for input from a list of options
 func (c *BaseCommand) AskWithOptions(query string, defaultVal string, options []string) (string, error) {
 	if c.flagYes && defaultVal != "" {
 		c.UI.Info(fmt.Sprintf("%s [%s]: %s", query, defaultVal, defaultVal))
@@ -306,7 +307,7 @@ func (c *BaseCommand) AskWithOptions(query string, defaultVal string, options []
 		if len(answer) != 0 {
 			for _, opt := range options {
 				if strings.EqualFold(answer, opt) {
-					return answer, nil
+					return opt, nil
 				}
 			}
 		}

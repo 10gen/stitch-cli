@@ -11,6 +11,12 @@ import (
 // AppConfigFileName is the name of top-level config file describing the app
 const AppConfigFileName string = "stitch.json"
 
+// Default deployment settings
+const (
+	DefaultLocation        string = "US-VA"
+	DefaultDeploymentModel string = "GLOBAL"
+)
+
 // App config field identifiers
 const (
 	AppIDField              string = "app_id"
@@ -76,12 +82,12 @@ func (aic AppInstanceData) AppName() string {
 func (aic AppInstanceData) AppLocation() string {
 	appLocation, ok := aic[AppLocationField]
 	if !ok {
-		return "US-VA"
+		return DefaultLocation
 	}
 
 	appLocationString, ok := appLocation.(string)
 	if !ok {
-		return "US-VA"
+		return DefaultLocation
 	}
 
 	return appLocationString
@@ -91,12 +97,12 @@ func (aic AppInstanceData) AppLocation() string {
 func (aic AppInstanceData) AppDeploymentModel() string {
 	appDeploymentModel, ok := aic[AppDeploymentModelField]
 	if !ok {
-		return "GLOBAL"
+		return DefaultDeploymentModel
 	}
 
 	appDeploymentModelString, ok := appDeploymentModel.(string)
 	if !ok {
-		return "GLOBAL"
+		return DefaultDeploymentModel
 	}
 
 	return appDeploymentModelString
