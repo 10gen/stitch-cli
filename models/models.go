@@ -76,12 +76,12 @@ func (aic AppInstanceData) AppName() string {
 func (aic AppInstanceData) AppLocation() string {
 	appLocation, ok := aic[AppLocationField]
 	if !ok {
-		return ""
+		return "US-VA"
 	}
 
 	appLocationString, ok := appLocation.(string)
 	if !ok {
-		return ""
+		return "US-VA"
 	}
 
 	return appLocationString
@@ -91,12 +91,12 @@ func (aic AppInstanceData) AppLocation() string {
 func (aic AppInstanceData) AppDeploymentModel() string {
 	appDeploymentModel, ok := aic[AppDeploymentModelField]
 	if !ok {
-		return ""
+		return "GLOBAL"
 	}
 
 	appDeploymentModelString, ok := appDeploymentModel.(string)
 	if !ok {
-		return ""
+		return "GLOBAL"
 	}
 
 	return appDeploymentModelString

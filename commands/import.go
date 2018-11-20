@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/10gen/stitch-cli/api"
 	"github.com/10gen/stitch-cli/hosting"
@@ -438,9 +439,7 @@ func (ic *ImportCommand) askCreateEmptyApp(query string, defaultAppName string, 
 		return nil, false, err
 	}
 
-	ic.UI.Info(fmt.Sprintf("location: %s, depmod: %s", location, deploymentModel))
-
-	app, err := stitchClient.CreateEmptyApp(groupID, appName, location, deploymentModel)
+	app, err := stitchClient.CreateEmptyApp(groupID, appName, strings.ToUpper(location), strings.ToUpper(deploymentModel))
 	if err != nil {
 		return nil, false, err
 	}
