@@ -28,6 +28,8 @@ const (
 	servicesName                = "services"
 	sourceName                  = "source"
 	valuesName                  = "values"
+	locationName                = "location"
+	deploymentModelName         = "deployment_model"
 )
 
 //

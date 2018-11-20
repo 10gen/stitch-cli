@@ -13,8 +13,10 @@ const AppConfigFileName string = "stitch.json"
 
 // App config field identifiers
 const (
-	AppIDField   string = "app_id"
-	AppNameField string = "name"
+	AppIDField              string = "app_id"
+	AppNameField            string = "name"
+	AppLocationField        string = "location"
+	AppDeploymentModelField string = "deployment_model"
 )
 
 const (
@@ -68,6 +70,36 @@ func (aic AppInstanceData) AppName() string {
 	}
 
 	return appNameString
+}
+
+// AppLocation returns the app's target cluster location
+func (aic AppInstanceData) AppLocation() string {
+	appLocation, ok := aic[AppLocationField]
+	if !ok {
+		return ""
+	}
+
+	appLocationString, ok := appLocation.(string)
+	if !ok {
+		return ""
+	}
+
+	return appLocationString
+}
+
+// AppDeploymentModel returns the app's deployment model
+func (aic AppInstanceData) AppDeploymentModel() string {
+	appDeploymentModel, ok := aic[AppDeploymentModelField]
+	if !ok {
+		return ""
+	}
+
+	appDeploymentModelString, ok := appDeploymentModel.(string)
+	if !ok {
+		return ""
+	}
+
+	return appDeploymentModelString
 }
 
 // UserProfile holds basic metadata for a given user

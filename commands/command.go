@@ -277,6 +277,44 @@ func (c *BaseCommand) Ask(query string, defaultVal string) (string, error) {
 	}
 }
 
+func (c *BaseCommand) AskWithOptions(query string, defaultVal string, options []string) (string, error) {
+	if c.flagYes && defaultVal != "" {
+		c.UI.Info(fmt.Sprintf("%s [%s]: %s", query, defaultVal, defaultVal))
+		return defaultVal, nil
+	}
+
+	var defaultClause string
+	if defaultVal != "" {
+		defaultClause = fmt.Sprintf(" [%s]", defaultVal)
+	}
+	res, err := c.UI.Ask(fmt.Sprintf("%s%s:", query, defaultClause))
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		var answer string
+
+		if len(res) > 0 {
+			answer = strings.TrimSpace(res)
+		}
+
+		if answer == "" && defaultVal != "" {
+			return defaultVal, nil
+		}
+
+		if len(answer) != 0 {
+			for _, opt := range options {
+				if strings.EqualFold(answer, opt) {
+					return answer, nil
+				}
+			}
+		}
+
+		res, _ = c.UI.Ask(fmt.Sprintf("Could not understand response, valid values are %s:", strings.Join(options[:], ", ")))
+	}
+}
+
 // Help defines help documentation for parameters that apply to all commands
 func (c *BaseCommand) Help() string {
 	return `

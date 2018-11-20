@@ -204,7 +204,7 @@ func (ic *ImportCommand) importApp() error {
 		ic.flagStrategy = importStrategyReplace
 
 		var wantedNewApp bool
-		app, wantedNewApp, err = ic.askCreateEmptyApp(err.Error(), appInstanceData.AppName(), stitchClient)
+		app, wantedNewApp, err = ic.askCreateEmptyApp(err.Error(), appInstanceData.AppName(), appInstanceData.AppLocation(), appInstanceData.AppDeploymentModel(), stitchClient)
 		if err != nil {
 			return err
 		}
@@ -391,7 +391,7 @@ func (ic *ImportCommand) resolveGroupID() (string, error) {
 	return groupID, nil
 }
 
-func (ic *ImportCommand) askCreateEmptyApp(query string, defaultAppName string, stitchClient api.StitchClient) (*models.App, bool, error) {
+func (ic *ImportCommand) askCreateEmptyApp(query string, defaultAppName string, defaultLocation string, defaultDeploymentModel string, stitchClient api.StitchClient) (*models.App, bool, error) {
 	if ic.flagAppName != "" {
 		defaultAppName = ic.flagAppName
 	}
@@ -426,7 +426,21 @@ func (ic *ImportCommand) askCreateEmptyApp(query string, defaultAppName string, 
 		}
 	}
 
-	app, err := stitchClient.CreateEmptyApp(groupID, appName)
+	locationOptions := []string{"US-VA", "US-OR", "IE", "AU"}
+	location, err := ic.AskWithOptions("Location", defaultLocation, locationOptions)
+	if err != nil {
+		return nil, false, err
+	}
+
+	deploymentModelOptions := []string{"GLOBAL", "LOCAL"}
+	deploymentModel, err := ic.AskWithOptions("Deployment Model", defaultDeploymentModel, deploymentModelOptions)
+	if err != nil {
+		return nil, false, err
+	}
+
+	ic.UI.Info(fmt.Sprintf("location: %s, depmod: %s", location, deploymentModel))
+
+	app, err := stitchClient.CreateEmptyApp(groupID, appName, location, deploymentModel)
 	if err != nil {
 		return nil, false, err
 	}
