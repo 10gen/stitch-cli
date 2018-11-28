@@ -86,9 +86,8 @@ func TestImportNewApp(t *testing.T) {
 			ExpectedDeploymentModel string
 		}
 
-		for _, tc := range []testCase{
-			{
-				Description:      "supports creating and importing a new app",
+		t.Run("supports creating and importing a new app", func(t *testing.T) {
+			tc := testCase{
 				Args:             []string{"--path=../testdata/new_app"},
 				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
@@ -105,45 +104,43 @@ func TestImportNewApp(t *testing.T) {
 						return nil, api.ErrAppNotFound{ClientAppID: clientAppID}
 					},
 				},
-			},
-		} {
-			t.Run(tc.Description, func(t *testing.T) {
-				importCommand, mockUI := setup()
+			}
 
-				// Mock responses for prompts
-				confirmCreateApp := "y\n"
-				enterAppName := "My-Test-app\n"
-				enterLocation := "US-VA\n"
-				enterDeploymentModel := "GLOBAL\n"
-				mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName + enterLocation + enterDeploymentModel)
-				importCommand.stitchClient = &tc.StitchClient
+			importCommand, mockUI := setup()
 
-				writeToDirectoryCallCount := 0
-				importCommand.writeToDirectory = func(dest string, zipData io.Reader, overwrite bool) error {
-					writeToDirectoryCallCount++
-					return nil
-				}
+			// Mock responses for prompts
+			confirmCreateApp := "y\n"
+			enterAppName := "My-Test-app\n"
+			enterLocation := "US-VA\n"
+			enterDeploymentModel := "GLOBAL\n"
+			mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName + enterLocation + enterDeploymentModel)
+			importCommand.stitchClient = &tc.StitchClient
 
-				writeAppConfigCallCount := 0
-				importCommand.writeAppConfigToFile = func(dest string, app models.AppInstanceData) error {
-					writeAppConfigCallCount++
-					return nil
-				}
+			writeToDirectoryCallCount := 0
+			importCommand.writeToDirectory = func(dest string, zipData io.Reader, overwrite bool) error {
+				writeToDirectoryCallCount++
+				return nil
+			}
 
-				exitCode := importCommand.Run(append([]string{"--project-id=59dbcb07127ab4131c54e810"}, tc.Args...))
-				u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
+			writeAppConfigCallCount := 0
+			importCommand.writeAppConfigToFile = func(dest string, app models.AppInstanceData) error {
+				writeAppConfigCallCount++
+				return nil
+			}
 
-				u.So(t, mockUI.ErrorWriter.String(), gc.ShouldBeEmpty)
-				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "New app created: My-Test-app-abcdef")
-				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "Successfully imported 'My-Test-app-abcdef'")
+			exitCode := importCommand.Run(append([]string{"--project-id=59dbcb07127ab4131c54e810"}, tc.Args...))
+			u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
 
-				mockStitchClient := importCommand.stitchClient.(*u.MockStitchClient)
-				u.So(t, mockStitchClient.ExportFnCalls, gc.ShouldHaveLength, 1)
+			u.So(t, mockUI.ErrorWriter.String(), gc.ShouldBeEmpty)
+			u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "New app created: My-Test-app-abcdef")
+			u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "Successfully imported 'My-Test-app-abcdef'")
 
-				u.So(t, writeToDirectoryCallCount, gc.ShouldEqual, 1)
-				u.So(t, writeAppConfigCallCount, gc.ShouldEqual, 1)
-			})
-		}
+			mockStitchClient := importCommand.stitchClient.(*u.MockStitchClient)
+			u.So(t, mockStitchClient.ExportFnCalls, gc.ShouldHaveLength, 1)
+
+			u.So(t, writeToDirectoryCallCount, gc.ShouldEqual, 1)
+			u.So(t, writeAppConfigCallCount, gc.ShouldEqual, 1)
+		})
 
 		for _, tc := range []testCase{
 			{
@@ -290,9 +287,8 @@ func TestImportNewApp(t *testing.T) {
 			})
 		}
 
-		for _, tc := range []testCase{
-			{
-				Description:      "returns an error when an invalid project name is entered",
+		t.Run("returns an error when an invalid project name is entered", func(t *testing.T) {
+			tc := testCase{
 				Args:             []string{"--path=../testdata/new_app"},
 				ExpectedExitCode: 1,
 				StitchClient: u.MockStitchClient{
@@ -317,41 +313,38 @@ func TestImportNewApp(t *testing.T) {
 						return nil, fmt.Errorf("no project found with name %s", groupName)
 					},
 				},
-			},
-		} {
-			t.Run(tc.Description, func(t *testing.T) {
-				importCommand, mockUI := setup()
+			}
 
-				// Mock responses for prompts
-				confirmCreateApp := "y\n"
-				enterAppName := "My-Test-app\n"
-				enterProjectName := "group\n"
-				mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName + enterProjectName)
-				importCommand.stitchClient = &tc.StitchClient
-				importCommand.atlasClient = &tc.AtlasClient
+			importCommand, mockUI := setup()
 
-				writeToDirectoryCallCount := 0
-				importCommand.writeToDirectory = func(dest string, zipData io.Reader, overwrite bool) error {
-					writeToDirectoryCallCount++
-					return nil
-				}
+			// Mock responses for prompts
+			confirmCreateApp := "y\n"
+			enterAppName := "My-Test-app\n"
+			enterProjectName := "group\n"
+			mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName + enterProjectName)
+			importCommand.stitchClient = &tc.StitchClient
+			importCommand.atlasClient = &tc.AtlasClient
 
-				writeAppConfigCallCount := 0
-				importCommand.writeAppConfigToFile = func(dest string, app models.AppInstanceData) error {
-					writeAppConfigCallCount++
-					return nil
-				}
-				exitCode := importCommand.Run(tc.Args)
-				u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
+			writeToDirectoryCallCount := 0
+			importCommand.writeToDirectory = func(dest string, zipData io.Reader, overwrite bool) error {
+				writeToDirectoryCallCount++
+				return nil
+			}
 
-				u.So(t, mockUI.ErrorWriter.String(), gc.ShouldEqual, "no project found with name "+enterProjectName)
-			})
-		}
+			writeAppConfigCallCount := 0
+			importCommand.writeAppConfigToFile = func(dest string, app models.AppInstanceData) error {
+				writeAppConfigCallCount++
+				return nil
+			}
+			exitCode := importCommand.Run(tc.Args)
+			u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
+
+			u.So(t, mockUI.ErrorWriter.String(), gc.ShouldEqual, "no project found with name "+enterProjectName)
+		})
 
 		//include multi-region
-		for _, tc := range []testCase{
-			{
-				Description:      "supports creating app with non-default location and deployment model",
+		t.Run("supports creating app with non-default location and deployment model", func(t *testing.T) {
+			tc := testCase{
 				Args:             []string{"--path=../testdata/simple_app_with_deployment_config"},
 				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
@@ -372,42 +365,41 @@ func TestImportNewApp(t *testing.T) {
 				DeploymentModelInput:    "GLOBAL\n",
 				ExpectedLocation:        "US-VA",
 				ExpectedDeploymentModel: "GLOBAL",
-			},
-		} {
-			t.Run(tc.Description, func(t *testing.T) {
-				importCommand, mockUI := setup()
+			}
 
-				// Mock responses for prompts
-				confirmCreateApp := "y\n"
-				enterAppName := "My-Test-app\n"
-				enterLocation := tc.LocationInput
-				enterDeploymentModel := tc.DeploymentModelInput
-				mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName + enterLocation + enterDeploymentModel)
+			importCommand, mockUI := setup()
 
-				origCreateEmptyAppFn := tc.StitchClient.CreateEmptyAppFn
-				defer func() {
-					tc.StitchClient.CreateEmptyAppFn = origCreateEmptyAppFn
-				}()
+			// Mock responses for prompts
+			confirmCreateApp := "y\n"
+			enterAppName := "My-Test-app\n"
+			enterLocation := tc.LocationInput
+			enterDeploymentModel := tc.DeploymentModelInput
+			mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName + enterLocation + enterDeploymentModel)
 
-				var createAppLocation, createAppDeploymentModelName string
-				tc.StitchClient.CreateEmptyAppFn = func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
-					createAppLocation = locationName
-					createAppDeploymentModelName = deploymentModelName
-					return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
-				}
+			origCreateEmptyAppFn := tc.StitchClient.CreateEmptyAppFn
+			defer func() {
+				tc.StitchClient.CreateEmptyAppFn = origCreateEmptyAppFn
+			}()
 
-				importCommand.stitchClient = &tc.StitchClient
-				exitCode := importCommand.Run(append([]string{"--project-id=59dbcb07127ab4131c54e810"}, tc.Args...))
-				u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
+			var createAppLocation, createAppDeploymentModelName string
+			tc.StitchClient.CreateEmptyAppFn = func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
+				createAppLocation = locationName
+				createAppDeploymentModelName = deploymentModelName
+				return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
+			}
 
-				u.So(t, mockUI.ErrorWriter.String(), gc.ShouldBeEmpty)
-				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "New app created: My-Test-app-abcdef")
-				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "Successfully imported 'My-Test-app-abcdef'")
+			importCommand.stitchClient = &tc.StitchClient
+			exitCode := importCommand.Run(append([]string{"--project-id=59dbcb07127ab4131c54e810"}, tc.Args...))
+			u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
 
-				u.So(t, createAppLocation, gc.ShouldEqual, tc.ExpectedLocation)
-				u.So(t, createAppDeploymentModelName, gc.ShouldEqual, tc.ExpectedDeploymentModel)
-			})
-		}
+			u.So(t, mockUI.ErrorWriter.String(), gc.ShouldBeEmpty)
+			u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "New app created: My-Test-app-abcdef")
+			u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "Successfully imported 'My-Test-app-abcdef'")
+
+			u.So(t, createAppLocation, gc.ShouldEqual, tc.ExpectedLocation)
+			u.So(t, createAppDeploymentModelName, gc.ShouldEqual, tc.ExpectedDeploymentModel)
+
+		})
 
 		for _, tc := range []testCase{
 			{
@@ -551,9 +543,8 @@ func TestImportCommand(t *testing.T) {
 			StitchClient     u.MockStitchClient
 		}
 
-		for _, tc := range []testCase{
-			{
-				Description:      "it does not import if the user does not confirm the diff",
+		t.Run("it does not import if the user does not confirm the diff", func(t *testing.T) {
+			tc := testCase{
 				Args:             append([]string{"--path=../testdata/full_app"}, validArgs...),
 				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
@@ -570,24 +561,23 @@ func TestImportCommand(t *testing.T) {
 						}, nil
 					},
 				},
-			},
-		} {
-			t.Run(tc.Description, func(t *testing.T) {
-				importCommand, mockUI := setup()
+			}
 
-				// Mock a "no" response when we prompt the user to confirm the diff
-				mockUI.InputReader = strings.NewReader("n\n")
-				importCommand.stitchClient = &tc.StitchClient
+			importCommand, mockUI := setup()
 
-				exitCode := importCommand.Run(tc.Args)
+			// Mock a "no" response when we prompt the user to confirm the diff
+			mockUI.InputReader = strings.NewReader("n\n")
+			importCommand.stitchClient = &tc.StitchClient
 
-				mockClient := importCommand.stitchClient.(*u.MockStitchClient)
+			exitCode := importCommand.Run(tc.Args)
 
-				u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
-				u.So(t, mockUI.ErrorWriter.String(), gc.ShouldBeEmpty)
-				u.So(t, len(mockClient.ImportFnCalls), gc.ShouldEqual, 0)
-			})
-		}
+			mockClient := importCommand.stitchClient.(*u.MockStitchClient)
+
+			u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
+			u.So(t, mockUI.ErrorWriter.String(), gc.ShouldBeEmpty)
+			u.So(t, len(mockClient.ImportFnCalls), gc.ShouldEqual, 0)
+
+		})
 
 		for _, tc := range []testCase{
 			{
