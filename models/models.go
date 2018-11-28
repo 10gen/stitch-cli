@@ -50,62 +50,42 @@ func (aic *AppInstanceData) MarshalFile(path string) error {
 
 // AppID returns the app's Client App ID
 func (aic AppInstanceData) AppID() string {
-	appID, ok := aic[AppIDField]
+	appID, ok := aic[AppIDField].(string)
 	if !ok {
 		return ""
 	}
 
-	appIDString, ok := appID.(string)
-	if !ok {
-		return ""
-	}
-
-	return appIDString
+	return appID
 }
 
 // AppName returns the app's user-defined name
 func (aic AppInstanceData) AppName() string {
-	appName, ok := aic[AppNameField]
+	appName, ok := aic[AppNameField].(string)
 	if !ok {
 		return ""
 	}
 
-	appNameString, ok := appName.(string)
-	if !ok {
-		return ""
-	}
-
-	return appNameString
+	return appName
 }
 
-// AppLocation returns the app's target cluster location
+// AppLocation returns the app's target location
 func (aic AppInstanceData) AppLocation() string {
-	appLocation, ok := aic[AppLocationField]
+	appLocation, ok := aic[AppLocationField].(string)
 	if !ok {
 		return DefaultLocation
 	}
 
-	appLocationString, ok := appLocation.(string)
-	if !ok {
-		return DefaultLocation
-	}
-
-	return appLocationString
+	return appLocation
 }
 
 // AppDeploymentModel returns the app's deployment model
 func (aic AppInstanceData) AppDeploymentModel() string {
-	appDeploymentModel, ok := aic[AppDeploymentModelField]
+	appDeploymentModel, ok := aic[AppDeploymentModelField].(string)
 	if !ok {
 		return DefaultDeploymentModel
 	}
 
-	appDeploymentModelString, ok := appDeploymentModel.(string)
-	if !ok {
-		return DefaultDeploymentModel
-	}
-
-	return appDeploymentModelString
+	return appDeploymentModel
 }
 
 // UserProfile holds basic metadata for a given user

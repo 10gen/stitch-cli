@@ -73,15 +73,17 @@ func TestImportNewApp(t *testing.T) {
 		}
 
 		type testCase struct {
-			Description          string
-			Args                 []string
-			ExpectedExitCode     int
-			StitchClient         u.MockStitchClient
-			AtlasClient          u.MockMDBClient
-			ProjectInput         string
-			LocationInput        string
-			DeploymentModelInput string
-			ExpectedError        string
+			Description             string
+			Args                    []string
+			ExpectedExitCode        int
+			StitchClient            u.MockStitchClient
+			AtlasClient             u.MockMDBClient
+			ProjectInput            string
+			LocationInput           string
+			DeploymentModelInput    string
+			ExpectedOutput          string
+			ExpectedLocation        string
+			ExpectedDeploymentModel string
 		}
 
 		for _, tc := range []testCase{
@@ -93,7 +95,7 @@ func TestImportNewApp(t *testing.T) {
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
 					},
-					CreateEmptyAppFn: func(groupID, appName string, locationName string, deploymentModelName string) (*models.App, error) {
+					CreateEmptyAppFn: func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
 						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
 					},
 					FetchAppsByGroupIDFn: func(groupID string) ([]*models.App, error) {
@@ -152,7 +154,7 @@ func TestImportNewApp(t *testing.T) {
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
 					},
-					CreateEmptyAppFn: func(groupID, appName string, locationName string, deploymentModelName string) (*models.App, error) {
+					CreateEmptyAppFn: func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
 						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
 					},
 					FetchAppsByGroupIDFn: func(groupID string) ([]*models.App, error) {
@@ -177,7 +179,7 @@ func TestImportNewApp(t *testing.T) {
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
 					},
-					CreateEmptyAppFn: func(groupID, appName string, locationName string, deploymentModelName string) (*models.App, error) {
+					CreateEmptyAppFn: func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
 						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
 					},
 					FetchAppsByGroupIDFn: func(groupID string) ([]*models.App, error) {
@@ -202,7 +204,7 @@ func TestImportNewApp(t *testing.T) {
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
 					},
-					CreateEmptyAppFn: func(groupID, appName string, locationName string, deploymentModelName string) (*models.App, error) {
+					CreateEmptyAppFn: func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
 						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
 					},
 					FetchAppsByGroupIDFn: func(groupID string) ([]*models.App, error) {
@@ -230,7 +232,7 @@ func TestImportNewApp(t *testing.T) {
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
 					},
-					CreateEmptyAppFn: func(groupID, appName string, locationName string, deploymentModelName string) (*models.App, error) {
+					CreateEmptyAppFn: func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
 						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
 					},
 					FetchAppsByGroupIDFn: func(groupID string) ([]*models.App, error) {
@@ -297,7 +299,7 @@ func TestImportNewApp(t *testing.T) {
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
 					},
-					CreateEmptyAppFn: func(groupID, appName string, locationName string, deploymentModelName string) (*models.App, error) {
+					CreateEmptyAppFn: func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
 						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
 					},
 					FetchAppsByGroupIDFn: func(groupID string) ([]*models.App, error) {
@@ -346,11 +348,12 @@ func TestImportNewApp(t *testing.T) {
 			})
 		}
 
+		//include multi-region
 		for _, tc := range []testCase{
 			{
-				Description:      "uses location and deployment model from config file as suggested default",
-				Args:             []string{"--path=../testdata/template_app_with_cluster"},
-				ExpectedExitCode: 1,
+				Description:      "supports creating app with non-default location and deployment model",
+				Args:             []string{"--path=../testdata/simple_app_with_deployment_config"},
+				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
@@ -361,7 +364,14 @@ func TestImportNewApp(t *testing.T) {
 					FetchAppByClientAppIDFn: func(clientAppID string) (*models.App, error) {
 						return nil, api.ErrAppNotFound{ClientAppID: clientAppID}
 					},
+					CreateEmptyAppFn: func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
+						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
+					},
 				},
+				LocationInput:           "US-VA\n",
+				DeploymentModelInput:    "GLOBAL\n",
+				ExpectedLocation:        "US-VA",
+				ExpectedDeploymentModel: "GLOBAL",
 			},
 		} {
 			t.Run(tc.Description, func(t *testing.T) {
@@ -370,32 +380,80 @@ func TestImportNewApp(t *testing.T) {
 				// Mock responses for prompts
 				confirmCreateApp := "y\n"
 				enterAppName := "My-Test-app\n"
-				enterLocation := "US-VA"
-				enterDeploymentModel := "GLOBAL"
+				enterLocation := tc.LocationInput
+				enterDeploymentModel := tc.DeploymentModelInput
 				mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName + enterLocation + enterDeploymentModel)
+
+				origCreateEmptyAppFn := tc.StitchClient.CreateEmptyAppFn
+				defer func() {
+					tc.StitchClient.CreateEmptyAppFn = origCreateEmptyAppFn
+				}()
+
+				var createAppLocation, createAppDeploymentModelName string
+				tc.StitchClient.CreateEmptyAppFn = func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
+					createAppLocation = locationName
+					createAppDeploymentModelName = deploymentModelName
+					return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
+				}
+
 				importCommand.stitchClient = &tc.StitchClient
-
-				writeToDirectoryCallCount := 0
-				importCommand.writeToDirectory = func(dest string, zipData io.Reader, overwrite bool) error {
-					writeToDirectoryCallCount++
-					return nil
-				}
-
-				writeAppConfigCallCount := 0
-				importCommand.writeAppConfigToFile = func(dest string, app models.AppInstanceData) error {
-					writeAppConfigCallCount++
-					return nil
-				}
-
 				exitCode := importCommand.Run(append([]string{"--project-id=59dbcb07127ab4131c54e810"}, tc.Args...))
 				u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
 
-				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "Location [IE]:")
-				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "Deployment Model [LOCAL]:")
+				u.So(t, mockUI.ErrorWriter.String(), gc.ShouldBeEmpty)
+				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "New app created: My-Test-app-abcdef")
+				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, "Successfully imported 'My-Test-app-abcdef'")
+
+				u.So(t, createAppLocation, gc.ShouldEqual, tc.ExpectedLocation)
+				u.So(t, createAppDeploymentModelName, gc.ShouldEqual, tc.ExpectedDeploymentModel)
 			})
 		}
 
 		for _, tc := range []testCase{
+			{
+				Description:      "uses location from config file as suggested default",
+				Args:             []string{"--path=../testdata/simple_app_with_deployment_config"},
+				ExpectedExitCode: 0,
+				StitchClient: u.MockStitchClient{
+					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
+						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
+					},
+					FetchAppsByGroupIDFn: func(groupID string) ([]*models.App, error) {
+						return []*models.App{}, nil
+					},
+					FetchAppByClientAppIDFn: func(clientAppID string) (*models.App, error) {
+						return nil, api.ErrAppNotFound{ClientAppID: clientAppID}
+					},
+					CreateEmptyAppFn: func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
+						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
+					},
+				},
+				LocationInput:        "US-VA\n",
+				DeploymentModelInput: "GLOBAL\n",
+				ExpectedOutput:       "Location [IE]",
+			},
+			{
+				Description:      "uses deployment model from config file as suggested default",
+				Args:             []string{"--path=../testdata/simple_app_with_deployment_config"},
+				ExpectedExitCode: 0,
+				StitchClient: u.MockStitchClient{
+					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
+						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
+					},
+					FetchAppsByGroupIDFn: func(groupID string) ([]*models.App, error) {
+						return []*models.App{}, nil
+					},
+					FetchAppByClientAppIDFn: func(clientAppID string) (*models.App, error) {
+						return nil, api.ErrAppNotFound{ClientAppID: clientAppID}
+					},
+					CreateEmptyAppFn: func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
+						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
+					},
+				},
+				LocationInput:        "US-VA\n",
+				DeploymentModelInput: "GLOBAL\n",
+				ExpectedOutput:       "Deployment Model [LOCAL]",
+			},
 			{
 				Description:      "returns an error when an invalid location is entered",
 				Args:             []string{"--path=../testdata/new_app"},
@@ -410,15 +468,18 @@ func TestImportNewApp(t *testing.T) {
 					FetchAppByClientAppIDFn: func(clientAppID string) (*models.App, error) {
 						return nil, api.ErrAppNotFound{ClientAppID: clientAppID}
 					},
+					CreateEmptyAppFn: func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
+						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
+					},
 				},
-				LocationInput:        "wef\n",
-				DeploymentModelInput: "",
-				ExpectedError:        "Could not understand response, valid values are US-VA, US-OR, IE, AU:",
+				LocationInput:        "test\n",
+				DeploymentModelInput: "GLOBAL\n",
+				ExpectedOutput:       "Could not understand response, valid values are US-VA, US-OR, IE, AU:",
 			},
 			{
 				Description:      "returns an error when an invalid deployment model is entered",
 				Args:             []string{"--path=../testdata/new_app"},
-				ExpectedExitCode: 1,
+				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
 						return "", u.NewResponseBody(bytes.NewReader([]byte{})), nil
@@ -429,10 +490,13 @@ func TestImportNewApp(t *testing.T) {
 					FetchAppByClientAppIDFn: func(clientAppID string) (*models.App, error) {
 						return nil, api.ErrAppNotFound{ClientAppID: clientAppID}
 					},
+					CreateEmptyAppFn: func(groupID, appName, locationName, deploymentModelName string) (*models.App, error) {
+						return &models.App{Name: appName, ClientAppID: appName + "-abcdef"}, nil
+					},
 				},
 				LocationInput:        "US-VA\n",
-				DeploymentModelInput: "wef\n",
-				ExpectedError:        "Could not understand response, valid values are GLOBAL, LOCAL",
+				DeploymentModelInput: "test\n",
+				ExpectedOutput:       "Could not understand response, valid values are GLOBAL, LOCAL",
 			},
 		} {
 			t.Run(tc.Description, func(t *testing.T) {
@@ -446,21 +510,10 @@ func TestImportNewApp(t *testing.T) {
 				mockUI.InputReader = strings.NewReader(confirmCreateApp + enterAppName + enterLocation + enterDeploymentModel)
 				importCommand.stitchClient = &tc.StitchClient
 
-				writeToDirectoryCallCount := 0
-				importCommand.writeToDirectory = func(dest string, zipData io.Reader, overwrite bool) error {
-					writeToDirectoryCallCount++
-					return nil
-				}
-
-				writeAppConfigCallCount := 0
-				importCommand.writeAppConfigToFile = func(dest string, app models.AppInstanceData) error {
-					writeAppConfigCallCount++
-					return nil
-				}
 				exitCode := importCommand.Run(append([]string{"--project-id=59dbcb07127ab4131c54e810"}, tc.Args...))
 				u.So(t, exitCode, gc.ShouldEqual, tc.ExpectedExitCode)
 
-				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, tc.ExpectedError)
+				u.So(t, mockUI.OutputWriter.String(), gc.ShouldContainSubstring, tc.ExpectedOutput)
 			})
 		}
 	})

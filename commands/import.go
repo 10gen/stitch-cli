@@ -29,6 +29,12 @@ const (
 	importStrategyReplace    = "replace"
 )
 
+// These variables should correspond to the values in the backend
+var (
+	locationOptions        = []string{"US-VA", "US-OR", "IE", "AU"}
+	deploymentModelOptions = []string{"GLOBAL", "LOCAL"}
+)
+
 func errCreateAppSyncFailure(err error) error {
 	return fmt.Errorf("failed to sync app with local directory after creation: %s", err)
 }
@@ -391,7 +397,7 @@ func (ic *ImportCommand) resolveGroupID() (string, error) {
 	return groupID, nil
 }
 
-func (ic *ImportCommand) askCreateEmptyApp(query string, defaultAppName string, defaultLocation string, defaultDeploymentModel string, stitchClient api.StitchClient) (*models.App, bool, error) {
+func (ic *ImportCommand) askCreateEmptyApp(query, defaultAppName, defaultLocation, defaultDeploymentModel string, stitchClient api.StitchClient) (*models.App, bool, error) {
 	if ic.flagAppName != "" {
 		defaultAppName = ic.flagAppName
 	}
@@ -426,13 +432,11 @@ func (ic *ImportCommand) askCreateEmptyApp(query string, defaultAppName string, 
 		}
 	}
 
-	locationOptions := []string{"US-VA", "US-OR", "IE", "AU"}
 	location, err := ic.AskWithOptions("Location", defaultLocation, locationOptions)
 	if err != nil {
 		return nil, false, err
 	}
 
-	deploymentModelOptions := []string{"GLOBAL", "LOCAL"}
 	deploymentModel, err := ic.AskWithOptions("Deployment Model", defaultDeploymentModel, deploymentModelOptions)
 	if err != nil {
 		return nil, false, err

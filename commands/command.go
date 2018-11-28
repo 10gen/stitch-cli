@@ -278,15 +278,15 @@ func (c *BaseCommand) Ask(query string, defaultVal string) (string, error) {
 }
 
 // AskWithOptions is used to prompt user for input from a list of options
-func (c *BaseCommand) AskWithOptions(query string, defaultVal string, options []string) (string, error) {
-	if c.flagYes && defaultVal != "" {
-		c.UI.Info(fmt.Sprintf("%s [%s]: %s", query, defaultVal, defaultVal))
-		return defaultVal, nil
+func (c *BaseCommand) AskWithOptions(query string, defaultValue string, options []string) (string, error) {
+	if c.flagYes && defaultValue != "" {
+		c.UI.Info(fmt.Sprintf("%s [%s]: %s", query, defaultValue, defaultValue))
+		return defaultValue, nil
 	}
 
 	var defaultClause string
-	if defaultVal != "" {
-		defaultClause = fmt.Sprintf(" [%s]", defaultVal)
+	if defaultValue != "" {
+		defaultClause = fmt.Sprintf(" [%s]", defaultValue)
 	}
 	res, err := c.UI.Ask(fmt.Sprintf("%s%s:", query, defaultClause))
 	if err != nil {
@@ -294,25 +294,21 @@ func (c *BaseCommand) AskWithOptions(query string, defaultVal string, options []
 	}
 
 	for {
-		var answer string
+		answer := strings.TrimSpace(res)
 
-		if len(res) > 0 {
-			answer = strings.TrimSpace(res)
+		if answer == "" && defaultValue != "" {
+			return defaultValue, nil
 		}
 
-		if answer == "" && defaultVal != "" {
-			return defaultVal, nil
-		}
-
-		if len(answer) != 0 {
-			for _, opt := range options {
-				if strings.EqualFold(answer, opt) {
-					return opt, nil
+		if answer != "" {
+			for _, option := range options {
+				if strings.EqualFold(answer, option) {
+					return option, nil
 				}
 			}
 		}
 
-		res, _ = c.UI.Ask(fmt.Sprintf("Could not understand response, valid values are %s:", strings.Join(options[:], ", ")))
+		res, _ = c.UI.Ask(fmt.Sprintf("Could not understand response, valid values are %s:", strings.Join(options, ", ")))
 	}
 }
 
