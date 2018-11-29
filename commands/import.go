@@ -29,7 +29,7 @@ const (
 	importStrategyReplace    = "replace"
 )
 
-// These variables should correspond to the values in the backend
+// Set of location and deployment model options supported by Stitch backend
 var (
 	locationOptions        = []string{"US-VA", "US-OR", "IE", "AU"}
 	deploymentModelOptions = []string{"GLOBAL", "LOCAL"}
