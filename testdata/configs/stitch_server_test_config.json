@@ -34,6 +34,27 @@
     "intercomSecretKey": "a-vCXNIGyhBt-Gs_3Qn455DwuS28qPD-ORX-ujs0",
     "cloudUIBaseUrl": "http://localhost:8080"
   },
+  "staticHosting": {
+    "blobStore": {
+      "type": "fs",
+      "config": {
+        "rootDirectory": "/tmp/statichosting/files"
+      }
+    },
+    "server": {
+      "type": "local",
+      "config": {
+        "host": "0.0.0.0",
+        "port": 8181
+      }
+    },
+    "domainProvider": {
+      "type": "local",
+      "config": {
+        "defaultDomainRoot": "baas-local-dev.com"
+      }
+    }
+  },
   "combinedServer": {
     "port": 9090
   },
