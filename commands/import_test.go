@@ -672,6 +672,28 @@ func TestImportCommand(t *testing.T) {
 				},
 			},
 			{
+				Description:      "it succeeds if using a specific project-id",
+				Args:             []string{"--path=../testdata/simple_app_with_instance_data", "--project-id=myprojectid"},
+				ExpectedExitCode: 0,
+				StitchClient: u.MockStitchClient{
+					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
+						return "", u.NewResponseBody(strings.NewReader("export response")), nil
+					},
+					ImportFn: func(groupID, appID string, appData []byte, strategy string) error {
+						return nil
+					},
+					DiffFn: func(groupID, appID string, appData []byte, strategy string) ([]string, error) {
+						return []string{"sample-diff-contents"}, nil
+					},
+					FetchAppByGroupIDAndClientAppIDFn: func(groupID, clientAppID string) (*models.App, error) {
+						return &models.App{
+							GroupID: "group-id",
+							ID:      "app-id",
+						}, nil
+					},
+				},
+			},
+			{
 				Description:      "it succeeds if it can grab instance data from the app config file in the current directory",
 				Args:             []string{},
 				ExpectedExitCode: 0,
