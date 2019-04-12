@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -673,7 +674,7 @@ func TestImportCommand(t *testing.T) {
 			},
 			{
 				Description:      "it succeeds if using a specific project-id",
-				Args:             []string{"--path=../testdata/simple_app_with_instance_data", "--project-id=myprojectid"},
+				Args:             []string{"--path=../testdata/simple_app_with_instance_data"},
 				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
@@ -684,6 +685,9 @@ func TestImportCommand(t *testing.T) {
 					},
 					DiffFn: func(groupID, appID string, appData []byte, strategy string) ([]string, error) {
 						return []string{"sample-diff-contents"}, nil
+					},
+					FetchAppByClientAppIDFn: func(clientAppID string) (*models.App, error) {
+						return nil, errors.New("this should not be called")
 					},
 					FetchAppByGroupIDAndClientAppIDFn: func(groupID, clientAppID string) (*models.App, error) {
 						return &models.App{
