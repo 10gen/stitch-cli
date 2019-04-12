@@ -674,7 +674,7 @@ func TestImportCommand(t *testing.T) {
 			},
 			{
 				Description:      "it succeeds if using a specific project-id",
-				Args:             []string{"--path=../testdata/simple_app_with_instance_data"},
+				Args:             []string{"--path=../testdata/simple_app_with_instance_data", "--project-id=myprojectid"},
 				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
 					ExportFn: func(groupID, appID string, isTemplated bool) (string, io.ReadCloser, error) {
