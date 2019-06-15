@@ -14,6 +14,7 @@ import (
 	"github.com/10gen/stitch-cli/auth"
 	"github.com/10gen/stitch-cli/hosting"
 	"github.com/10gen/stitch-cli/models"
+	"github.com/10gen/stitch-cli/secrets"
 )
 
 const (
@@ -25,6 +26,8 @@ const (
 	hostingAssetRoute           = adminBaseURL + "/groups/%s/apps/%s/hosting/assets/asset"
 	hostingAssetsRoute          = adminBaseURL + "/groups/%s/apps/%s/hosting/assets"
 	hostingInvalidateCacheRoute = adminBaseURL + "/groups/%s/apps/%s/hosting/cache"
+	secretsRoute                = adminBaseURL + "/groups/%s/apps/%s/secrets"
+	secretRoute                 = adminBaseURL + "/groups/%s/apps/%s/secrets/%s"
 )
 
 var (
@@ -74,6 +77,8 @@ type StitchClient interface {
 	SetAssetAttributes(groupID, appID, path string, attributes ...hosting.AssetAttribute) error
 	ListAssetsForAppID(groupID, appID string) ([]hosting.AssetMetadata, error)
 	InvalidateCache(groupID, appID, path string) error
+	AddSecret(groupID, appID string, secret secrets.Secret) error
+	RemoveSecret(groupID, appID, secretID string) error
 }
 
 // NewStitchClient returns a new StitchClient to be used for making calls to the Stitch Admin API
@@ -449,6 +454,46 @@ func (sc *basicStitchClient) InvalidateCache(groupID, appID, path string) error 
 		},
 	)
 	return checkStatusNoContent(res, err, "failed to invalidate cache")
+}
+
+// AddSecret creates a secret for the app
+func (sc *basicStitchClient) AddSecret(groupID, appID string, secret secrets.Secret) error {
+	payload, err := json.Marshal(secret)
+	if err != nil {
+		return err
+	}
+
+	res, err := sc.ExecuteRequest(
+		http.MethodPost,
+		fmt.Sprintf(secretsRoute, groupID, appID),
+		RequestOptions{
+			Body: bytes.NewReader(payload),
+		},
+	)
+	if err != nil {
+		return nil
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusCreated {
+		return UnmarshalStitchError(res)
+	}
+
+	return nil
+}
+
+// RemoveSecret deletes a secret from the app
+func (sc *basicStitchClient) RemoveSecret(groupID, appID, secretID string) error {
+	res, err := sc.ExecuteRequest(
+		http.MethodDelete,
+		fmt.Sprintf(secretRoute, groupID, appID, secretID),
+		RequestOptions{},
+	)
+	if err != nil {
+		return nil
+	}
+
+	return checkStatusNoContent(res, err, "failed to remove secret")
 }
 
 func checkStatusNoContent(res *http.Response, requestErr error, errMessage string) error {

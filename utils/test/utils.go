@@ -21,6 +21,7 @@ import (
 	"github.com/10gen/stitch-cli/models"
 	"github.com/10gen/stitch-cli/storage"
 	"github.com/10gen/stitch-cli/user"
+	"github.com/10gen/stitch-cli/secrets"
 
 	"github.com/smartystreets/goconvey/convey/gotest"
 	"gopkg.in/yaml.v2"
@@ -217,6 +218,8 @@ type MockStitchClient struct {
 	ImportFnCalls                     [][]string
 	DiffFn                            func(groupID, appID string, appData []byte, strategy string) ([]string, error)
 	InvalidateCacheFn                 func(groupID, appID, path string) error
+	AddSecretFn                       func(groupID, appID string, secret secrets.Secret) error
+	RemoveSecretFn                    func(groupID, appID, secretID string) error
 }
 
 // Authenticate will authenticate a user given an auth.AuthenticationProvider
@@ -391,6 +394,24 @@ func (msc *MockStitchClient) ListAssetsForAppID(groupID, appID string) ([]hostin
 func (msc *MockStitchClient) InvalidateCache(groupID, appID, path string) error {
 	if msc.InvalidateCacheFn != nil {
 		return msc.InvalidateCacheFn(groupID, appID, path)
+	}
+
+	return nil
+}
+
+// AddSecret adds a secret to the app
+func (msc *MockStitchClient) AddSecret(groupID, appID string, secret secrets.Secret) error {
+	if msc.AddSecretFn != nil {
+		return msc.AddSecretFn(groupID, appID, secret)
+	}
+
+	return nil
+}
+
+// RemoveSecret removes a secret from the app
+func (msc *MockStitchClient) RemoveSecret(groupID, appID, secretID string) error {
+	if msc.RemoveSecretFn != nil {
+		return msc.RemoveSecretFn(groupID, appID, secretID)
 	}
 
 	return nil

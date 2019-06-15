@@ -28,6 +28,7 @@ func main() {
 		"export": commands.NewExportCommandFactory(ui),
 		"import": commands.NewImportCommandFactory(ui),
 		"diff":   commands.NewDiffCommandFactory(ui),
+		"secrets": commands.NewSecretsCommandFactory(ui),
 	}
 
 	exitStatus, err := c.Run()

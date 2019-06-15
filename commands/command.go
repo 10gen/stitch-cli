@@ -36,6 +36,7 @@ type BaseCommand struct {
 
 	Name string
 
+	CLI *cli.CLI
 	UI cli.Ui
 
 	client       api.Client
