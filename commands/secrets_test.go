@@ -1,13 +1,13 @@
 package commands
 
 import (
-	"testing"
 	"errors"
+	"testing"
 
+	"github.com/10gen/stitch-cli/models"
+	"github.com/10gen/stitch-cli/secrets"
 	"github.com/10gen/stitch-cli/user"
 	u "github.com/10gen/stitch-cli/utils/test"
-	"github.com/10gen/stitch-cli/secrets"
-	"github.com/10gen/stitch-cli/models"
 
 	"github.com/mitchellh/cli"
 	gc "github.com/smartystreets/goconvey/convey"
@@ -27,8 +27,8 @@ func setUpBasicSecretsCommand(
 	secretsCommand.storage = u.NewEmptyStorage()
 
 	mockStitchClient := &u.MockStitchClient{
-		AddSecretFn:             addSecretFn,
-		RemoveSecretFn:          removeSecretFn,
+		AddSecretFn:    addSecretFn,
+		RemoveSecretFn: removeSecretFn,
 		FetchAppByClientAppIDFn: func(clientAppID string) (*models.App, error) {
 			return &models.App{
 				GroupID: "group-id",
@@ -64,7 +64,7 @@ func TestSecretsCommand(t *testing.T) {
 		setup := func(
 			addSecretsFn func(appID, groupID string, secret secrets.Secret) error,
 			removeSecretsFn func(appID, groupID, secretID string) error,
-	) (*SecretsCommand, *cli.MockUi) {
+		) (*SecretsCommand, *cli.MockUi) {
 			secretsCommand, mockUI := setUpBasicSecretsCommand(addSecretsFn, removeSecretsFn)
 
 			secretsCommand.user = &user.User{
@@ -76,9 +76,9 @@ func TestSecretsCommand(t *testing.T) {
 		}
 
 		t.Run("it fails if there is no sub command", func(t *testing.T) {
-				secretsCommand, _ := setup(nil, nil)
-				exitCode := secretsCommand.Run(append([]string{}, validAddArgs...))
-				u.So(t, exitCode, gc.ShouldEqual, 127)
+			secretsCommand, _ := setup(nil, nil)
+			exitCode := secretsCommand.Run(append([]string{}, validAddArgs...))
+			u.So(t, exitCode, gc.ShouldEqual, 127)
 		})
 
 		t.Run("it fails if there is an invalid sub command", func(t *testing.T) {
@@ -134,7 +134,7 @@ func TestSecretsCommand(t *testing.T) {
 				secretValue = secret.Value
 				return nil
 			}, nil)
-			exitCode := secretsCommand.Run(append([]string{"add" }, validAddArgs...))
+			exitCode := secretsCommand.Run(append([]string{"add"}, validAddArgs...))
 			u.So(t, exitCode, gc.ShouldEqual, 0)
 			u.So(t, secretName, gc.ShouldEqual, "foo")
 			u.So(t, secretValue, gc.ShouldEqual, "bar")

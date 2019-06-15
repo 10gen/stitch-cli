@@ -1,17 +1,17 @@
 package commands
 
 import (
-	"os"
 	"fmt"
+	"os"
 	"path/filepath"
 
-	"github.com/mitchellh/cli"
-	"github.com/10gen/stitch-cli/utils"
-	u "github.com/10gen/stitch-cli/user"
 	"github.com/10gen/stitch-cli/secrets"
+	u "github.com/10gen/stitch-cli/user"
+	"github.com/10gen/stitch-cli/utils"
+	"github.com/mitchellh/cli"
 )
 
-// NewDiffCommandFactory returns a new cli.CommandFactory given a cli.Ui
+// NewSecretsCommandFactory returns a new cli.CommandFactory given a cli.Ui
 func NewSecretsCommandFactory(ui cli.Ui) cli.CommandFactory {
 	return func() (cli.Command, error) {
 		c := cli.NewCLI(filepath.Base(os.Args[0]), utils.CLIVersion)
@@ -27,7 +27,7 @@ func NewSecretsCommandFactory(ui cli.Ui) cli.CommandFactory {
 		}
 
 		c.Commands = map[string]cli.CommandFactory{
-			"add": NewSecretsAddCommandFactory(sc),
+			"add":    NewSecretsAddCommandFactory(sc),
 			"remove": NewSecretsRemoveCommandFactory(sc),
 		}
 
@@ -72,9 +72,9 @@ const (
 )
 
 var (
-	errSecretNameRequired = fmt.Errorf("a name (--%s=[string]) must be supplied to create a Secret", flagSecretName)
+	errSecretNameRequired  = fmt.Errorf("a name (--%s=[string]) must be supplied to create a Secret", flagSecretName)
 	errSecretValueRequired = fmt.Errorf("a value (--%s=[string]) must be supplied to create a Secret", flagSecretValue)
-	errSecretIDRequired = fmt.Errorf("an ID (--%s=[string]) must be supplied to remove a Secret", flagSecretID)
+	errSecretIDRequired    = fmt.Errorf("an ID (--%s=[string]) must be supplied to remove a Secret", flagSecretID)
 )
 
 // NewSecretsAddCommandFactory returns a new cli.CommandFactory given a cli.Ui
@@ -88,7 +88,7 @@ func NewSecretsAddCommandFactory(sc *SecretsCommand) cli.CommandFactory {
 	}
 }
 
-// SecretsCommand is used to run CRUD operations on a Stitch App's secrets
+// SecretsAddCommand is used to add secrets to a Stitch app
 type SecretsAddCommand struct {
 	*SecretsCommand
 
@@ -194,12 +194,12 @@ func NewSecretsRemoveCommandFactory(sc *SecretsCommand) cli.CommandFactory {
 	}
 }
 
-// SecretsCommand is used to run CRUD operations on a Stitch App's secrets
+// SecretsRemoveCommand is used to remove secrets from a Stitch app
 type SecretsRemoveCommand struct {
 	*SecretsCommand
 
-	flagAppID       string
-	flagSecretID    string
+	flagAppID    string
+	flagSecretID string
 }
 
 // Synopsis returns a one-liner description for this command

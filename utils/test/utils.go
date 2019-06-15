@@ -19,9 +19,9 @@ import (
 	"github.com/10gen/stitch-cli/auth"
 	"github.com/10gen/stitch-cli/hosting"
 	"github.com/10gen/stitch-cli/models"
+	"github.com/10gen/stitch-cli/secrets"
 	"github.com/10gen/stitch-cli/storage"
 	"github.com/10gen/stitch-cli/user"
-	"github.com/10gen/stitch-cli/secrets"
 
 	"github.com/smartystreets/goconvey/convey/gotest"
 	"gopkg.in/yaml.v2"
