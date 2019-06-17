@@ -218,8 +218,12 @@ type MockStitchClient struct {
 	ImportFnCalls                     [][]string
 	DiffFn                            func(groupID, appID string, appData []byte, strategy string) ([]string, error)
 	InvalidateCacheFn                 func(groupID, appID, path string) error
+	ListSecretsFn                     func(groupID, appID string) ([]secrets.Secret, error)
 	AddSecretFn                       func(groupID, appID string, secret secrets.Secret) error
-	RemoveSecretFn                    func(groupID, appID, secretID string) error
+	UpdateSecretByIDFn                func(groupID, appID, secretID, secretValue string) error
+	UpdateSecretByNameFn              func(groupID, appID, secretName, secretValue string) error
+	RemoveSecretByIDFn                func(groupID, appID, secretID string) error
+	RemoveSecretByNameFn              func(groupID, appID, secretName string) error
 }
 
 // Authenticate will authenticate a user given an auth.AuthenticationProvider
@@ -399,6 +403,15 @@ func (msc *MockStitchClient) InvalidateCache(groupID, appID, path string) error 
 	return nil
 }
 
+// ListSecrets lists the secrets of an app
+func (msc *MockStitchClient) ListSecrets(groupID, appID string) ([]secrets.Secret, error) {
+	if msc.ListSecretsFn != nil {
+		return msc.ListSecretsFn(groupID, appID)
+	}
+
+	return nil, nil
+}
+
 // AddSecret adds a secret to the app
 func (msc *MockStitchClient) AddSecret(groupID, appID string, secret secrets.Secret) error {
 	if msc.AddSecretFn != nil {
@@ -408,10 +421,37 @@ func (msc *MockStitchClient) AddSecret(groupID, appID string, secret secrets.Sec
 	return nil
 }
 
-// RemoveSecret removes a secret from the app
-func (msc *MockStitchClient) RemoveSecret(groupID, appID, secretID string) error {
-	if msc.RemoveSecretFn != nil {
-		return msc.RemoveSecretFn(groupID, appID, secretID)
+// UpdateSecretByID updates a secret from the app
+func (msc *MockStitchClient) UpdateSecretByID(groupID, appID, secretID, secretValue string) error {
+	if msc.UpdateSecretByIDFn != nil {
+		return msc.UpdateSecretByIDFn(groupID, appID, secretID, secretValue)
+	}
+
+	return nil
+}
+
+// UpdateSecretByName updates a secret from the app
+func (msc *MockStitchClient) UpdateSecretByName(groupID, appID, secretName, secretValue string) error {
+	if msc.UpdateSecretByNameFn != nil {
+		return msc.UpdateSecretByNameFn(groupID, appID, secretName, secretValue)
+	}
+
+	return nil
+}
+
+// RemoveSecretByID removes a secret from the app
+func (msc *MockStitchClient) RemoveSecretByID(groupID, appID, secretID string) error {
+	if msc.RemoveSecretByIDFn != nil {
+		return msc.RemoveSecretByIDFn(groupID, appID, secretID)
+	}
+
+	return nil
+}
+
+// RemoveSecretByName removes a secret from the app
+func (msc *MockStitchClient) RemoveSecretByName(groupID, appID, secretName string) error {
+	if msc.RemoveSecretByNameFn != nil {
+		return msc.RemoveSecretByNameFn(groupID, appID, secretName)
 	}
 
 	return nil
