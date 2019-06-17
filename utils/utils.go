@@ -371,9 +371,10 @@ func GenerateFileHashStr(fName string) (string, error) {
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
-func ResolveAppDirectory(path, workingDirectory string) (string, error) {
-	if path != "" {
-		path, err := homedir.Expand(path)
+// ResolveAppDirectory returns the directory path for an app
+func ResolveAppDirectory(appPath, workingDirectory string) (string, error) {
+	if appPath != "" {
+		path, err := homedir.Expand(appPath)
 		if err != nil {
 			return "", err
 		}
@@ -387,7 +388,7 @@ func ResolveAppDirectory(path, workingDirectory string) (string, error) {
 	return GetDirectoryContainingFile(workingDirectory, models.AppConfigFileName)
 }
 
-// resolveAppInstanceData loads data for an app from a stitch.json file located in the provided directory path,
+// ResolveAppInstanceData loads data for an app from a stitch.json file located in the provided directory path,
 // merging in any overridden parameters from command line flags
 func ResolveAppInstanceData(appID, path string) (models.AppInstanceData, error) {
 	appInstanceDataFromFile := models.AppInstanceData{}

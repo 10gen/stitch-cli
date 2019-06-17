@@ -88,7 +88,7 @@ var (
 	errSecretIDOrNameRequired = fmt.Errorf("a Secret name or ID (--%s=[string] or --%s=[string]) is required", flagSecretNameIdentifier, flagSecretID)
 )
 
-// NewSecretsRemoveCommandFactory returns a new cli.CommandFactory given a cli.Ui
+// NewSecretsListCommandFactory returns a new cli.CommandFactory given a cli.Ui
 func NewSecretsListCommandFactory(sc *SecretsCommand) cli.CommandFactory {
 	return func() (cli.Command, error) {
 		sc.Name = "list"
@@ -99,14 +99,11 @@ func NewSecretsListCommandFactory(sc *SecretsCommand) cli.CommandFactory {
 	}
 }
 
-// SecretsRemoveCommand is used to remove secrets from a Stitch app
+// SecretsListCommand is used to list secrets from a Stitch app
 type SecretsListCommand struct {
 	*SecretsCommand
 
-	flagAppID       string
-	flagSecretID    string
-	flagSecretName  string
-	flagSecretValue string
+	flagAppID string
 }
 
 // Synopsis returns a one-liner description for this command
