@@ -511,7 +511,7 @@ func (sc *basicStitchClient) AddSecret(groupID, appID string, secret secrets.Sec
 	return nil
 }
 
-// UpdateSecretByID deletes a secret from the app
+// UpdateSecretByID updates a secret's value from the app
 func (sc *basicStitchClient) UpdateSecretByID(groupID, appID, secretID, secretValue string) error {
 	appSecrets, err := sc.ListSecrets(groupID, appID)
 	if err != nil {
@@ -550,7 +550,7 @@ func (sc *basicStitchClient) UpdateSecretByID(groupID, appID, secretID, secretVa
 	return checkStatusNoContent(res, err, "failed to update secret")
 }
 
-// UpdateSecretByName deletes a secret from the app
+// UpdateSecretByName updates a secret's value from the app
 func (sc *basicStitchClient) UpdateSecretByName(groupID, appID, secretName, secretValue string) error {
 	appSecrets, err := sc.ListSecrets(groupID, appID)
 	if err != nil {
