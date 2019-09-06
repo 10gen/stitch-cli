@@ -52,10 +52,14 @@ func setUpBasicSecretsCommand(
 func TestSecretsCommand(t *testing.T) {
 	validListArgs := []string{"--app-id=my-app-abcdef"}
 	validAddArgs := []string{"--app-id=my-app-abcdef", "--name=foo", "--value=bar"}
-	validUpdateByIDArgs := []string{"--app-id=my-app-abcdef", "--secret-id=thisisanid", "--value=newvalue"}
-	validUpdateByNameArgs := []string{"--app-id=my-app-abcdef", "--secret-name=thisisaname", "--value=newvalue"}
-	validRemoveByIDArgs := []string{"--app-id=my-app-abcdef", "--secret-id=thisisanid"}
-	validRemoveByNameArgs := []string{"--app-id=my-app-abcdef", "--secret-name=thisisaname"}
+	validUpdateByIDArgs := []string{"--app-id=my-app-abcdef", "--id=thisisanid", "--value=newvalue"}
+	validUpdateByIDDeprecatedArgs := []string{"--app-id=my-app-abcdef", "--secret-id=thisisanid", "--value=newvalue"}
+	validUpdateByNameArgs := []string{"--app-id=my-app-abcdef", "--name=thisisaname", "--value=newvalue"}
+	validUpdateByNameDeprecatedArgs := []string{"--app-id=my-app-abcdef", "--secret-name=thisisaname", "--value=newvalue"}
+	validRemoveByIDArgs := []string{"--app-id=my-app-abcdef", "--id=thisisanid"}
+	validRemoveByIDDeprecatedArgs := []string{"--app-id=my-app-abcdef", "--secret-id=thisisanid"}
+	validRemoveByNameArgs := []string{"--app-id=my-app-abcdef", "--name=thisisaname"}
+	validRemoveByNameDeprecatedArgs := []string{"--app-id=my-app-abcdef", "--secret-name=thisisaname"}
 
 	t.Run("listing a secret should require the user to be logged in", func(t *testing.T) {
 		mockUI := cli.NewMockUi()
@@ -85,33 +89,61 @@ func TestSecretsCommand(t *testing.T) {
 		u.So(t, mockUI.ErrorWriter.String(), gc.ShouldContainSubstring, user.ErrNotLoggedIn.Error())
 	})
 
-	t.Run("updating a secret should require the user to be logged in", func(t *testing.T) {
-		mockUI := cli.NewMockUi()
-		cmd, err := NewSecretsUpdateCommandFactory(mockUI)()
-		u.So(t, err, gc.ShouldBeNil)
+	for _, tc := range []struct {
+		description string
+		args        []string
+	}{
+		{
+			description: "updating a secret args should require the user to be logged in",
+			args:        validUpdateByIDArgs,
+		},
+		{
+			description: "updating a secret with deprecated args should require the user to be logged in",
+			args:        validUpdateByIDDeprecatedArgs,
+		},
+	} {
+		t.Run(tc.description, func(t *testing.T) {
+			mockUI := cli.NewMockUi()
+			cmd, err := NewSecretsUpdateCommandFactory(mockUI)()
+			u.So(t, err, gc.ShouldBeNil)
 
-		updateCommand := cmd.(*SecretsUpdateCommand)
-		setUpBasicSecretsCommand(updateCommand.SecretsBaseCommand, nil)
+			updateCommand := cmd.(*SecretsUpdateCommand)
+			setUpBasicSecretsCommand(updateCommand.SecretsBaseCommand, nil)
 
-		exitCode := updateCommand.Run(validUpdateByIDArgs)
-		u.So(t, exitCode, gc.ShouldEqual, 1)
+			exitCode := updateCommand.Run(tc.args)
+			u.So(t, exitCode, gc.ShouldEqual, 1)
 
-		u.So(t, mockUI.ErrorWriter.String(), gc.ShouldContainSubstring, user.ErrNotLoggedIn.Error())
-	})
+			u.So(t, mockUI.ErrorWriter.String(), gc.ShouldContainSubstring, user.ErrNotLoggedIn.Error())
+		})
+	}
 
-	t.Run("removing a secret should require the user to be logged in", func(t *testing.T) {
-		mockUI := cli.NewMockUi()
-		cmd, err := NewSecretsRemoveCommandFactory(mockUI)()
-		u.So(t, err, gc.ShouldBeNil)
+	for _, tc := range []struct {
+		description string
+		args        []string
+	}{
+		{
+			description: "removing a secret should require the user to be logged in",
+			args:        validRemoveByIDArgs,
+		},
+		{
+			description: "removing a secret with deprecated args should require the user to be logged in",
+			args:        validRemoveByIDDeprecatedArgs,
+		},
+	} {
+		t.Run(tc.description, func(t *testing.T) {
+			mockUI := cli.NewMockUi()
+			cmd, err := NewSecretsRemoveCommandFactory(mockUI)()
+			u.So(t, err, gc.ShouldBeNil)
 
-		removeCommand := cmd.(*SecretsRemoveCommand)
-		setUpBasicSecretsCommand(removeCommand.SecretsBaseCommand, nil)
+			removeCommand := cmd.(*SecretsRemoveCommand)
+			setUpBasicSecretsCommand(removeCommand.SecretsBaseCommand, nil)
 
-		exitCode := removeCommand.Run(validRemoveByIDArgs)
-		u.So(t, exitCode, gc.ShouldEqual, 1)
+			exitCode := removeCommand.Run(tc.args)
+			u.So(t, exitCode, gc.ShouldEqual, 1)
 
-		u.So(t, mockUI.ErrorWriter.String(), gc.ShouldContainSubstring, user.ErrNotLoggedIn.Error())
-	})
+			u.So(t, mockUI.ErrorWriter.String(), gc.ShouldContainSubstring, user.ErrNotLoggedIn.Error())
+		})
+	}
 
 	t.Run("when the user is logged in", func(t *testing.T) {
 		setup := func(
@@ -286,77 +318,133 @@ func TestSecretsCommand(t *testing.T) {
 			u.So(t, secretValue, gc.ShouldEqual, "bar")
 		})
 
-		t.Run("it passes the correct flags to UpdateSecretByID", func(t *testing.T) {
-			mockUI := cli.NewMockUi()
-			cmd, err := NewSecretsUpdateCommandFactory(mockUI)()
-			u.So(t, err, gc.ShouldBeNil)
+		for _, tc := range []struct {
+			description string
+			args        []string
+		}{
+			{
+				description: "it passes the correct flags to UpdateSecretByID",
+				args:        validUpdateByIDArgs,
+			},
+			{
+				description: "it passes the correct flags to UpdateSecretByID with deprecated args",
+				args:        validUpdateByIDDeprecatedArgs,
+			},
+		} {
+			t.Run(tc.description, func(t *testing.T) {
+				mockUI := cli.NewMockUi()
+				cmd, err := NewSecretsUpdateCommandFactory(mockUI)()
+				u.So(t, err, gc.ShouldBeNil)
 
-			var secretID string
-			updateCommand := cmd.(*SecretsUpdateCommand)
-			setup(updateCommand.SecretsBaseCommand, &mockClientFunctions{
-				updateSecretByIDFn: func(appID, groupID, id, value string) error {
-					secretID = id
-					return nil
-				},
+				var secretID string
+				updateCommand := cmd.(*SecretsUpdateCommand)
+				setup(updateCommand.SecretsBaseCommand, &mockClientFunctions{
+					updateSecretByIDFn: func(appID, groupID, id, value string) error {
+						secretID = id
+						return nil
+					},
+				})
+				exitCode := updateCommand.Run(tc.args)
+				u.So(t, exitCode, gc.ShouldEqual, 0)
+				u.So(t, secretID, gc.ShouldEqual, "thisisanid")
 			})
-			exitCode := updateCommand.Run(validUpdateByIDArgs)
-			u.So(t, exitCode, gc.ShouldEqual, 0)
-			u.So(t, secretID, gc.ShouldEqual, "thisisanid")
-		})
+		}
 
-		t.Run("it passes the correct flags to UpdateSecretByName", func(t *testing.T) {
-			mockUI := cli.NewMockUi()
-			cmd, err := NewSecretsUpdateCommandFactory(mockUI)()
-			u.So(t, err, gc.ShouldBeNil)
+		for _, tc := range []struct {
+			description string
+			args        []string
+		}{
+			{
+				description: "it passes the correct flags to UpdateSecretByName",
+				args:        validUpdateByNameArgs,
+			},
+			{
+				description: "it passes the correct flags to UpdateSecretByName with deprecated args",
+				args:        validUpdateByNameDeprecatedArgs,
+			},
+		} {
+			t.Run(tc.description, func(t *testing.T) {
+				mockUI := cli.NewMockUi()
+				cmd, err := NewSecretsUpdateCommandFactory(mockUI)()
+				u.So(t, err, gc.ShouldBeNil)
 
-			var secretName string
-			updateCommand := cmd.(*SecretsUpdateCommand)
-			setup(updateCommand.SecretsBaseCommand, &mockClientFunctions{
-				updateSecretByNameFn: func(appID, groupID, name, value string) error {
-					secretName = name
-					return nil
-				},
+				var secretName string
+				updateCommand := cmd.(*SecretsUpdateCommand)
+				setup(updateCommand.SecretsBaseCommand, &mockClientFunctions{
+					updateSecretByNameFn: func(appID, groupID, name, value string) error {
+						secretName = name
+						return nil
+					},
+				})
+				exitCode := updateCommand.Run(tc.args)
+				u.So(t, exitCode, gc.ShouldEqual, 0)
+				u.So(t, secretName, gc.ShouldEqual, "thisisaname")
 			})
-			exitCode := updateCommand.Run(validUpdateByNameArgs)
-			u.So(t, exitCode, gc.ShouldEqual, 0)
-			u.So(t, secretName, gc.ShouldEqual, "thisisaname")
-		})
+		}
 
-		t.Run("it passes the correct flags to RemoveSecretByID", func(t *testing.T) {
-			mockUI := cli.NewMockUi()
-			cmd, err := NewSecretsRemoveCommandFactory(mockUI)()
-			u.So(t, err, gc.ShouldBeNil)
+		for _, tc := range []struct {
+			description string
+			args        []string
+		}{
+			{
+				description: "it passes the correct flags to RemoveSecretByID",
+				args:        validRemoveByIDArgs,
+			},
+			{
+				description: "it passes the correct flags to RemoveSecretByID with deprecated args",
+				args:        validRemoveByIDDeprecatedArgs,
+			},
+		} {
+			t.Run(tc.description, func(t *testing.T) {
+				mockUI := cli.NewMockUi()
+				cmd, err := NewSecretsRemoveCommandFactory(mockUI)()
+				u.So(t, err, gc.ShouldBeNil)
 
-			removeCommand := cmd.(*SecretsRemoveCommand)
-			var secretID string
-			setup(removeCommand.SecretsBaseCommand, &mockClientFunctions{
-				removeSecretByIDFn: func(appID, groupID, id string) error {
-					secretID = id
-					return nil
-				},
+				removeCommand := cmd.(*SecretsRemoveCommand)
+				var secretID string
+				setup(removeCommand.SecretsBaseCommand, &mockClientFunctions{
+					removeSecretByIDFn: func(appID, groupID, id string) error {
+						secretID = id
+						return nil
+					},
+				})
+				exitCode := removeCommand.Run(tc.args)
+				u.So(t, exitCode, gc.ShouldEqual, 0)
+				u.So(t, secretID, gc.ShouldEqual, "thisisanid")
 			})
-			exitCode := removeCommand.Run(validRemoveByIDArgs)
-			u.So(t, exitCode, gc.ShouldEqual, 0)
-			u.So(t, secretID, gc.ShouldEqual, "thisisanid")
-		})
+		}
 
-		t.Run("it passes the correct flags to RemoveSecretByName", func(t *testing.T) {
-			mockUI := cli.NewMockUi()
-			cmd, err := NewSecretsRemoveCommandFactory(mockUI)()
-			u.So(t, err, gc.ShouldBeNil)
+		for _, tc := range []struct {
+			description string
+			args        []string
+		}{
+			{
+				description: "it passes the correct flags to RemoveSecretByName",
+				args:        validRemoveByNameArgs,
+			},
+			{
+				description: "it passes the correct flags to RemoveSecretByName with deprecated args",
+				args:        validRemoveByNameDeprecatedArgs,
+			},
+		} {
+			t.Run(tc.description, func(t *testing.T) {
+				mockUI := cli.NewMockUi()
+				cmd, err := NewSecretsRemoveCommandFactory(mockUI)()
+				u.So(t, err, gc.ShouldBeNil)
 
-			removeCommand := cmd.(*SecretsRemoveCommand)
-			var secretName string
-			setup(removeCommand.SecretsBaseCommand, &mockClientFunctions{
-				removeSecretByNameFn: func(appID, groupID, name string) error {
-					secretName = name
-					return nil
-				},
+				removeCommand := cmd.(*SecretsRemoveCommand)
+				var secretName string
+				setup(removeCommand.SecretsBaseCommand, &mockClientFunctions{
+					removeSecretByNameFn: func(appID, groupID, name string) error {
+						secretName = name
+						return nil
+					},
+				})
+				exitCode := removeCommand.Run(tc.args)
+				u.So(t, exitCode, gc.ShouldEqual, 0)
+				u.So(t, secretName, gc.ShouldEqual, "thisisaname")
 			})
-			exitCode := removeCommand.Run(validRemoveByNameArgs)
-			u.So(t, exitCode, gc.ShouldEqual, 0)
-			u.So(t, secretName, gc.ShouldEqual, "thisisaname")
-		})
+		}
 
 		t.Run("listing secrets works when there are none", func(t *testing.T) {
 			mockUI := cli.NewMockUi()
