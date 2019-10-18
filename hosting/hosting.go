@@ -181,7 +181,7 @@ func DiffAssetMetadata(local, remote []AssetMetadata, merge bool) *AssetMetadata
 	remoteAM := AssetsMetadata(remote).MapByPath()
 
 	// Ignore the root directory
-	delete(remoteAM, "/")
+	delete(remoteAM, string(os.PathSeparator))
 
 	for _, lAM := range local {
 		if rAM, ok := remoteAM[lAM.FilePath]; !ok {
