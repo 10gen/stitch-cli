@@ -2,6 +2,7 @@ package hosting
 
 import (
 	"encoding/json"
+	"os"
 	"path"
 	"sort"
 	"strings"
@@ -42,7 +43,7 @@ type AssetMetadata struct {
 
 // IsDir is true if the asset represents a directory
 func (amd *AssetMetadata) IsDir() bool {
-	return strings.HasSuffix(amd.FilePath, "/")
+	return strings.HasSuffix(amd.FilePath, string(os.PathSeparator))
 }
 
 // NewAssetMetadata is a constructor for AssetMetadata
