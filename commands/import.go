@@ -120,7 +120,8 @@ OPTIONS:
 
 
   --include-dependencies
-	Upload the node_modules archive within the "/functions" directory
+	Upload the node_modules archive within the "/functions" directory.
+	The supported formats are: TAR, GZIP, and ZIP
 	` +
 		ic.BaseCommand.Help()
 }

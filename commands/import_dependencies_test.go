@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -80,7 +81,7 @@ func TestFindDependenciesArchive(t *testing.T) {
 		{
 			desc: "should return an error with an app with too many deps archives",
 			dir:  "../testdata/app_with_too_many_deps_archives/functions",
-			err:  "too many node_modules archives found in the '%s' directory",
+			err:  "found more than one node_modules archive in the '%s' directory",
 		},
 	} {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -89,6 +90,50 @@ func TestFindDependenciesArchive(t *testing.T) {
 
 			_, err := findDependenciesArchive(dir)
 			u.So(t, err.Error(), gc.ShouldEqual, fmt.Sprintf(tc.err, dir))
+		})
+	}
+}
+
+func TestValidateFileFormat(t *testing.T) {
+	for _, tc := range []struct {
+		desc        string
+		file        string
+		expectedErr error
+	}{
+		{
+			desc:        "TAR format should be supported",
+			file:        "functions/node_modules.tar",
+			expectedErr: nil,
+		},
+		{
+			desc:        "ZIP format should be supported",
+			file:        "functions/node_modules.zip",
+			expectedErr: nil,
+		},
+		{
+			desc:        "GZIP format should be supported (gz)",
+			file:        "functions/node_modules.tar.gz",
+			expectedErr: nil,
+		},
+		{
+			desc:        "GZIP format should be supported (tgz)",
+			file:        "functions/node_modules.tgz",
+			expectedErr: nil,
+		},
+		{
+			desc:        "ZIPX should not be supported",
+			file:        "functions/node_modules.zipx",
+			expectedErr: errors.New("File 'functions/node_modules.zipx' has an unsupported format"),
+		},
+		{
+			desc:        "an extension with a 'gz' suffix should not be supported",
+			file:        "node_modules.2gz",
+			expectedErr: errors.New("File 'node_modules.2gz' has an unsupported format"),
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := validateDependenciesFileFormat(tc.file)
+			u.So(t, err, gc.ShouldResemble, tc.expectedErr)
 		})
 	}
 }
