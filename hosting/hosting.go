@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/10gen/stitch-cli/utils"
 )
@@ -45,7 +46,7 @@ func buildAssetMetadata(appID string, assetMetadata *[]AssetMetadata, rootDir st
 			if pathErr != nil {
 				return pathErr
 			}
-			assetPath := fmt.Sprintf("/%s", relPath)
+			assetPath := fmt.Sprintf("/%s", strings.ReplaceAll(relPath, "\\", "/"))
 
 			var desc *AssetDescription
 			if assetDescriptions != nil {
@@ -127,7 +128,8 @@ func MetadataFileToAssetDescriptions(path string) (map[string]AssetDescription, 
 
 	descM := make(map[string]AssetDescription, len(descs))
 	for _, desc := range descs {
-		descM[desc.FilePath] = desc
+		descFilePath := strings.ReplaceAll(desc.FilePath, "\\", "/")
+		descM[descFilePath] = desc
 	}
 
 	return descM, nil
@@ -181,7 +183,7 @@ func DiffAssetMetadata(local, remote []AssetMetadata, merge bool) *AssetMetadata
 	remoteAM := AssetsMetadata(remote).MapByPath()
 
 	// Ignore the root directory
-	delete(remoteAM, string(os.PathSeparator))
+	delete(remoteAM, "/")
 
 	for _, lAM := range local {
 		if rAM, ok := remoteAM[lAM.FilePath]; !ok {
