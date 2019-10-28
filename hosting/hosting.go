@@ -46,7 +46,7 @@ func buildAssetMetadata(appID string, assetMetadata *[]AssetMetadata, rootDir st
 			if pathErr != nil {
 				return pathErr
 			}
-			assetPath := fmt.Sprintf("/%s", strings.ReplaceAll(relPath, "\\", "/"))
+			assetPath := fmt.Sprintf("/%s", strings.ReplaceAll(relPath, string(os.PathSeparator), "/"))
 
 			var desc *AssetDescription
 			if assetDescriptions != nil {
@@ -128,7 +128,7 @@ func MetadataFileToAssetDescriptions(path string) (map[string]AssetDescription, 
 
 	descM := make(map[string]AssetDescription, len(descs))
 	for _, desc := range descs {
-		descFilePath := strings.ReplaceAll(desc.FilePath, "\\", "/")
+		descFilePath := strings.ReplaceAll(desc.FilePath, string(os.PathSeparator), "/")
 		descM[descFilePath] = desc
 	}
 
