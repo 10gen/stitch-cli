@@ -46,7 +46,7 @@ func buildAssetMetadata(appID string, assetMetadata *[]AssetMetadata, rootDir st
 			if pathErr != nil {
 				return pathErr
 			}
-			assetPath := fmt.Sprintf("/%s", strings.ReplaceAll(relPath, string(os.PathSeparator), "/"))
+			assetPath := fmt.Sprintf("/%s", ReplacePathSeparator(relPath))
 
 			var desc *AssetDescription
 			if assetDescriptions != nil {
@@ -128,7 +128,7 @@ func MetadataFileToAssetDescriptions(path string) (map[string]AssetDescription, 
 
 	descM := make(map[string]AssetDescription, len(descs))
 	for _, desc := range descs {
-		descFilePath := strings.ReplaceAll(desc.FilePath, string(os.PathSeparator), "/")
+		descFilePath := ReplacePathSeparator(desc.FilePath)
 		descM[descFilePath] = desc
 	}
 
@@ -235,4 +235,9 @@ func (amd *AssetMetadataDiffs) Diff() []string {
 	}
 
 	return diff
+}
+
+// ReplacePathSeparator returns path with os dependent path separators replaced by uniform '/'
+func ReplacePathSeparator(path string) string {
+	return strings.ReplaceAll(path, string(os.PathSeparator), "/")
 }
