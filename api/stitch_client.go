@@ -848,7 +848,14 @@ func (sc *basicStitchClient) UploadDependencies(groupID, appID, fullPath string)
 		},
 	)
 
-	return checkStatusNoContent(res, err, "failed to upload dependencies")
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return UnmarshalStitchError(res)
+	}
+	return nil
 }
 
 func newDepsMultipartWriter(fullPath string) (io.Reader, *multipart.Writer, error) {

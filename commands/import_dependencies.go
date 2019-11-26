@@ -57,6 +57,6 @@ func validateDependenciesFileFormat(fullPath string) error {
 	case extZip, extTar, extGz, extTgz:
 		return nil
 	default:
-		return fmt.Errorf("File '%s' has an unsupported format", fullPath)
+		return fmt.Errorf("file '%s' has an unsupported format", fullPath)
 	}
 }

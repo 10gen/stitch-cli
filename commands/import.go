@@ -297,6 +297,10 @@ func (ic *ImportCommand) importApp(dryRun bool) error {
 			diffs = append(diffs, hostingDiff...)
 		}
 
+		if ic.flagIncludeDependencies {
+			diffs = append(diffs, "Import dependencies")
+		}
+
 		if len(diffs) == 0 {
 			ic.UI.Info("Deployed app is identical to proposed version, nothing to do.")
 			return nil

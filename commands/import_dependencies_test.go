@@ -123,12 +123,12 @@ func TestValidateFileFormat(t *testing.T) {
 		{
 			desc:        "ZIPX should not be supported",
 			file:        "functions/node_modules.zipx",
-			expectedErr: errors.New("File 'functions/node_modules.zipx' has an unsupported format"),
+			expectedErr: errors.New("file 'functions/node_modules.zipx' has an unsupported format"),
 		},
 		{
 			desc:        "an extension with a 'gz' suffix should not be supported",
 			file:        "node_modules.2gz",
-			expectedErr: errors.New("File 'node_modules.2gz' has an unsupported format"),
+			expectedErr: errors.New("file 'node_modules.2gz' has an unsupported format"),
 		},
 	} {
 		t.Run(tc.desc, func(t *testing.T) {
