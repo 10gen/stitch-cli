@@ -34,7 +34,6 @@ func TestImportDependencies(t *testing.T) {
 }
 
 func TestFindDependenciesArchive(t *testing.T) {
-	// successes
 	dirAbsPath, dirErr := filepath.Abs("../testdata/app_with_dependencies/functions")
 	u.So(t, dirErr, gc.ShouldBeNil)
 	for _, tc := range []struct {
@@ -43,12 +42,12 @@ func TestFindDependenciesArchive(t *testing.T) {
 		file string
 	}{
 		{
-			desc: "should find the node_modules.tar archive and ignore the node_modules folder",
+			desc: "should successfully find the node_modules.tar archive and ignore the node_modules folder",
 			dir:  dirAbsPath,
 			file: "../testdata/app_with_dependencies/functions/node_modules.tar",
 		},
 		{
-			desc: "should find the node_modules.tar archive with a relative path",
+			desc: "should successfully find the node_modules.tar archive with a relative path",
 			dir:  "../testdata/app_with_dependencies/functions",
 			file: "../testdata/app_with_dependencies/functions/node_modules.tar",
 		},
@@ -62,7 +61,6 @@ func TestFindDependenciesArchive(t *testing.T) {
 		})
 	}
 
-	// failures
 	for _, tc := range []struct {
 		desc string
 		dir  string

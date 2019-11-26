@@ -834,7 +834,7 @@ func findAppByClientAppID(apps []*models.App, clientAppID string) *models.App {
 }
 
 func (sc *basicStitchClient) UploadDependencies(groupID, appID, fullPath string) error {
-	body, writer, err := newDepsMultipartWriter(fullPath)
+	body, formatDataContentType, err := newMultipartMessage(fullPath)
 	if err != nil {
 		return err
 	}
@@ -844,7 +844,7 @@ func (sc *basicStitchClient) UploadDependencies(groupID, appID, fullPath string)
 		fmt.Sprintf(dependenciesRoute, groupID, appID),
 		RequestOptions{
 			Body:   body,
-			Header: http.Header{"Content-Type": {writer.FormDataContentType()}},
+			Header: http.Header{"Content-Type": {formatDataContentType}},
 		},
 	)
 
@@ -858,15 +858,15 @@ func (sc *basicStitchClient) UploadDependencies(groupID, appID, fullPath string)
 	return nil
 }
 
-func newDepsMultipartWriter(fullPath string) (io.Reader, *multipart.Writer, error) {
+func newMultipartMessage(fullPath string) (io.Reader, string, error) {
 	file, openErr := os.Open(fullPath)
 	if openErr != nil {
-		return nil, nil, fmt.Errorf("failed to open the dependencies file '%s': %s", fullPath, openErr)
+		return nil, "", fmt.Errorf("failed to open the dependencies file '%s': %s", fullPath, openErr)
 	}
 	defer file.Close()
 	fileInfo, statErr := file.Stat()
 	if statErr != nil {
-		return nil, nil, errors.New("failed to grab the dependencies file info")
+		return nil, "", errors.New("failed to grab the dependencies file info")
 	}
 
 	body := &bytes.Buffer{}
@@ -874,13 +874,13 @@ func newDepsMultipartWriter(fullPath string) (io.Reader, *multipart.Writer, erro
 	defer writer.Close()
 	part, formErr := writer.CreateFormFile(fileParam, fileInfo.Name())
 	if formErr != nil {
-		return nil, nil, fmt.Errorf("failed to create multipart form file: %s", formErr)
+		return nil, "", fmt.Errorf("failed to create multipart form file: %s", formErr)
 	}
 
 	_, copyErr := io.Copy(part, file)
 	if copyErr != nil {
-		return nil, nil, fmt.Errorf("failed to write file to body: %s", copyErr)
+		return nil, "", fmt.Errorf("failed to write file to body: %s", copyErr)
 	}
 
-	return body, writer, nil
+	return body, writer.FormDataContentType(), nil
 }

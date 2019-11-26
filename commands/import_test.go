@@ -963,7 +963,7 @@ func TestImportCommand(t *testing.T) {
 		// include dependencies
 		for _, tc := range []testCase{
 			{
-				Description:      "it succeeds if given a vaild flagAppPath and flagIncludeDependencies",
+				Description:      "it succeeds if given a valid flagAppPath and flagIncludeDependencies",
 				Args:             append([]string{"--path=../testdata/full_app", "--include-dependencies"}, validArgs...),
 				ExpectedExitCode: 0,
 				StitchClient: u.MockStitchClient{
