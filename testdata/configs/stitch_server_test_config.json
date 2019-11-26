@@ -70,8 +70,8 @@
       "AWS_EVENTBRIDGE": {
         "config": {
           "partnerName": "mongodb.com.test",
-          "awsAccessKeyId": "AKIAJXIYQPGNAIGB5B2A",
-          "awsSecretKey": "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"
+          "awsAccessKeyId": "XXXXXXXXXXXXXXXXXXXX",
+          "awsSecretKey": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
         }
       }
     }
