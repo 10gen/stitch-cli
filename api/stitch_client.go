@@ -34,9 +34,10 @@ const (
 	userProfileRoute       = adminBaseURL + "/auth/profile"
 	authProviderLoginRoute = adminBaseURL + "/auth/providers/%s/login"
 
-	appsByGroupIDRoute = adminBaseURL + "/groups/%s/apps"
-	appImportRoute     = adminBaseURL + "/groups/%s/apps/%s/import"
-	appExportRoute     = adminBaseURL + "/groups/%s/apps/%s/export?%s"
+	appsByGroupIDRoute      = adminBaseURL + "/groups/%s/apps"
+	atlasAppsByGroupIDRoute = adminBaseURL + "/groups/%s/apps?product=atlas"
+	appImportRoute          = adminBaseURL + "/groups/%s/apps/%s/import"
+	appExportRoute          = adminBaseURL + "/groups/%s/apps/%s/export?%s"
 
 	draftsRoute      = adminBaseURL + "/groups/%s/apps/%s/drafts"
 	draftByIDRoute   = adminBaseURL + "/groups/%s/apps/%s/drafts/%s"
@@ -407,7 +408,29 @@ func (sc *basicStitchClient) FetchAppsByGroupID(groupID string) ([]*models.App, 
 	if err := dec.Decode(&apps); err != nil {
 		return nil, err
 	}
+	return apps, nil
+}
 
+func (sc *basicStitchClient) FetchAtlasAppsByGroupID(groupID string) ([]*models.App, error) {
+	res, err := sc.ExecuteRequest(http.MethodGet, fmt.Sprintf(atlasAppsByGroupIDRoute, groupID), RequestOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		if res.StatusCode == http.StatusNotFound {
+			return nil, errGroupNotFound
+		}
+		return nil, UnmarshalStitchError(res)
+	}
+
+	dec := json.NewDecoder(res.Body)
+	var apps []*models.App
+	if err := dec.Decode(&apps); err != nil {
+		return nil, err
+	}
 	return apps, nil
 }
 
@@ -568,6 +591,16 @@ func (sc *basicStitchClient) DeleteAsset(groupID, appID, path string) error {
 func (sc *basicStitchClient) findProjectAppByClientAppID(groupIDs []string, clientAppID string) (*models.App, error) {
 	for _, groupID := range groupIDs {
 		apps, err := sc.FetchAppsByGroupID(groupID)
+		if err != nil && err != errGroupNotFound {
+			return nil, err
+		}
+
+		if app := findAppByClientAppID(apps, clientAppID); app != nil {
+			return app, nil
+		}
+
+		// Check if the clientAppID is referring to an Atlas trigger
+		apps, err = sc.FetchAtlasAppsByGroupID(groupID)
 		if err != nil && err != errGroupNotFound {
 			return nil, err
 		}
