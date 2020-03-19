@@ -2,6 +2,7 @@ package commands
 
 import (
 	"archive/zip"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -85,7 +86,8 @@ func ImportDependencies(groupID, appID, dir string, client api.StitchClient) err
 		sources = append(sources, string(fileContents))
 		fullNames = append(fullNames, fullpath)
 	}
-
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	transpiled, err := tr.Transpile(ctx, sources...)
 	if err != nil {
 		return err
