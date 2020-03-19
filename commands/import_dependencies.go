@@ -2,12 +2,10 @@ package commands
 
 import (
 	"archive/zip"
-	"context"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -42,22 +40,15 @@ func ImportDependencies(groupID, appID, dir string, client api.StitchClient) err
 
 	outFile, err := os.Create(filepath.Join(os.TempDir(), "node_modules.zip"))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer outFile.Close()
 
 	w := zip.NewWriter(outFile)
 
-	ctx := context.Background()
-
 	fullNames := make([]string, 0)
 	sources := make([]string, 0)
 	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
 		header, err := archive.Next()
 		if err == io.EOF {
 			break
