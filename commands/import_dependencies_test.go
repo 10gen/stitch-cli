@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	u "github.com/10gen/stitch-cli/utils/test"
+	"github.com/mitchellh/cli"
 	gc "github.com/smartystreets/goconvey/convey"
 )
 
@@ -24,7 +25,8 @@ func TestImportDependencies(t *testing.T) {
 			},
 		}
 
-		err := ImportDependencies(expectedGroupID, expectedAppID, dir, stitchClient)
+		mockUI := cli.NewMockUi()
+		err := ImportDependencies(mockUI, expectedGroupID, expectedAppID, dir, stitchClient)
 		u.So(t, err, gc.ShouldBeNil)
 	})
 

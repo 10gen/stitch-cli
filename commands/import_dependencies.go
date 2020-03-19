@@ -13,9 +13,10 @@ import (
 	"github.com/10gen/stitch-cli/api"
 	"github.com/10gen/stitch-cli/dependency/transpiler"
 	"github.com/10gen/stitch-cli/utils"
+	"github.com/mitchellh/cli"
 )
 
-func ImportDependencies(groupID, appID, dir string, client api.StitchClient) error {
+func ImportDependencies(ui cli.Ui, groupID, appID, dir string, client api.StitchClient) error {
 	fullPath, err := findDependenciesLocation(dir)
 	if err != nil {
 		return err
@@ -29,7 +30,7 @@ func ImportDependencies(groupID, appID, dir string, client api.StitchClient) err
 	defer file.Close()
 	fileInfo, err := file.Stat()
 	if err != nil {
-		return errors.New("failed to grab the dependencies file info")
+		return errors.New("failed to read dependencies from " + fullPath)
 	}
 
 	archive, err := utils.NewArchiveReader(file, fullPath, fileInfo.Size())
@@ -88,6 +89,8 @@ func ImportDependencies(groupID, appID, dir string, client api.StitchClient) err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	ui.Info("transpiling dependencies started.")
 	transpiled, err := tr.Transpile(ctx, sources...)
 	if err != nil {
 		return err
@@ -102,6 +105,7 @@ func ImportDependencies(groupID, appID, dir string, client api.StitchClient) err
 			return err
 		}
 	}
+	ui.Info("transpiling dependencies finished.")
 
 	err = w.Close()
 	if err != nil {

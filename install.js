@@ -104,7 +104,7 @@ try {
 }
 
 requstBinary(downloadURL, 'stitch-cli').catch(err => {
-  console.error('Stitch CLI installation failed while downloading:', err);
+  console.error('failed to download Stitch CLI:', err);
   process.exit(1);
 });
 
@@ -117,6 +117,6 @@ try {
 }
 
 requstBinary(transpilerdownloadURL, 'transpiler').catch(err => {
-  console.error('Stitch CLI installation failed while downloading:', err);
+  console.error('failed to download Stitch CLI:', err);
   process.exit(1);
 });

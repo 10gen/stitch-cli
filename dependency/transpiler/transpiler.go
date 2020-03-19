@@ -58,8 +58,6 @@ func (tes TranspileErrors) Error() string {
 	}
 }
 
-// var maxConcurrentExternalTranspilations = int(math.Ceil(float64(runtime.NumCPU()) * 0.2))
-
 // Transpiler allows building transpiled source code and a source map from a given ES6 source string
 type Transpiler interface {
 	Transpile(ctx context.Context, code ...string) ([]TranspileResult, error)
