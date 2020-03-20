@@ -63,8 +63,10 @@ func ImportDependencies(ui cli.Ui, groupID, appID, dir string, client api.Stitch
 			continue
 		}
 
-		fullpath := header.FileInfo().Name()
-		fullpath = filepath.Join("node_modules", fullpath)
+		fullpath, err := filepath.Rel(dir, header.FullPath)
+		if err != nil {
+			return err
+		}
 
 		fileContents, err := ioutil.ReadAll(archive)
 		if err != nil {
@@ -119,6 +121,8 @@ func ImportDependencies(ui cli.Ui, groupID, appID, dir string, client api.Stitch
 
 	// clean up after ourselves
 	defer os.Remove(fp)
+
+	fmt.Println(fp)
 
 	err = client.UploadDependencies(groupID, appID, fp)
 	if err != nil {
