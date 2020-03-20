@@ -122,8 +122,6 @@ func ImportDependencies(ui cli.Ui, groupID, appID, dir string, client api.Stitch
 	// clean up after ourselves
 	defer os.Remove(fp)
 
-	fmt.Println(fp)
-
 	err = client.UploadDependencies(groupID, appID, fp)
 	if err != nil {
 		return err
