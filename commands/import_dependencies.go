@@ -65,7 +65,8 @@ func ImportDependencies(ui cli.Ui, groupID, appID, dir string, client api.Stitch
 
 		fullpath, err := filepath.Rel(dir, header.FullPath)
 		if err != nil {
-			return err
+			// header.FullPath is the relative path already
+			fullpath = header.FullPath
 		}
 
 		fileContents, err := ioutil.ReadAll(archive)
