@@ -184,7 +184,7 @@ func (ec *ExportCommand) run() error {
 		if err != nil {
 			return err
 		}
-		defer body.Close()
+		defer depBody.Close()
 		functionsDir := filepath.Join(filename, utils.FunctionsRoot, depArchive)
 		err = ec.writeFileToDirectory(functionsDir, depBody)
 		if err != nil {
