@@ -75,7 +75,6 @@ functions:
             set -e
             set -v
             export ROOT_DIR=`pwd`
-            export STITCH=$ROOT_DIR/stitch
             export PATH="$ROOT_DIR/yarn/bin:$PATH"
             export NVM_DIR="$ROOT_DIR/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
@@ -108,11 +107,15 @@ functions:
         shell: "bash"
         script: |
           set -e
+          export ROOT_DIR=`pwd`
+          export PATH="$ROOT_DIR/yarn/bin:$PATH"
+          export NVM_DIR="$ROOT_DIR/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use ${node_version}
           cd stitch/etc/transpiler
           curl -OL https://yarnpkg.com/latest.tar.gz
           tar zvxf latest.tar.gz
           mv yarn-* yarn
-          export PATH="`pwd`/yarn/bin:$PATH"
           yarn install && yarn run build -t ${transpiler_target}
   "start_server":
     - command: shell.exec
@@ -288,7 +291,9 @@ tasks:
             curl -OL https://yarnpkg.com/latest.tar.gz
             tar zvxf latest.tar.gz
             mv yarn-* yarn
-            export PATH="`pwd`/yarn/bin:$PATH"
+            export PATH="$ROOT_DIR/yarn/bin:$PATH"
+            export NVM_DIR="$ROOT_DIR/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             yarn install 
             # linux 
             yarn run build -t node8-linux-x64
