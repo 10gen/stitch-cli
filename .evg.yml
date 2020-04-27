@@ -98,7 +98,7 @@ functions:
         shell: "bash"
         script: |
           set -e
-          cd stitch
+          cd baas
           mkdir -p etc/dylib
           cd etc/dylib
           curl -s "${server_stitch_lib_url}" | tar xvfz - --strip-components=1
@@ -112,7 +112,7 @@ functions:
           export NVM_DIR="$ROOT_DIR/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm use ${node_version}
-          cd stitch/etc/transpiler
+          cd baas/etc/transpiler
           curl -OL https://yarnpkg.com/latest.tar.gz
           tar zvxf latest.tar.gz
           mv yarn-* yarn
@@ -127,9 +127,9 @@ functions:
           export PATH="$ROOT_DIR:$PATH"
           export GOROOT=$ROOT_DIR/go
           export PATH=$GOROOT/bin:$PATH
-          cd $ROOT_DIR/stitch
-          export PATH="$ROOT_DIR/stitch/etc/transpiler/bin:$PATH"
-          export LD_LIBRARY_PATH="$ROOT_DIR/stitch/etc/dylib/lib"
+          cd $ROOT_DIR/baas
+          export PATH="$ROOT_DIR/baas/etc/transpiler/bin:$PATH"
+          export LD_LIBRARY_PATH="$ROOT_DIR/baas/etc/dylib/lib"
           which transpiler
           cat > atlas_config.json <<EOF
           {
