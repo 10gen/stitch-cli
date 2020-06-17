@@ -66,7 +66,7 @@ func TestCloudCommands(t *testing.T) {
 		WithAuth(cloudEnv.AdminUsername, cloudEnv.AdminAPIKey)
 
 	defer func() {
-		user := fmt.Sprintf("mongodb-stitch-%s-mongodb-atlas", appID)
+		user := fmt.Sprintf("mongodb-realm-%s-mongodb-atlas", appID)
 		if err := atlasClient.DeleteDatabaseUser(cloudEnv.GroupID, user); err != nil {
 			t.Errorf("Failed to delete user '%s': %s", user, err)
 		}
