@@ -130,26 +130,10 @@ functions:
           cd $ROOT_DIR/baas
           export PATH="$ROOT_DIR/baas/etc/transpiler/bin:$PATH"
           export LD_LIBRARY_PATH="$ROOT_DIR/baas/etc/dylib/lib"
-          which transpiler
-          cat > atlas_config.json <<EOF
-          {
-            "admin": {
-              "authProviders": [
-                {
-                  "name": "mongodb-cloud",
-                  "type": "mongodb-cloud",
-                  "config": {
-                      "baseUrl": "https://cloud-dev.mongodb.com",
-                      "adminUsername": "${stitch_mongodb_cloud_atlas_admin_username}",
-                      "adminAPIKey": "${stitch_mongodb_cloud_atlas_admin_api_key}"
-                    },
-                    "metadataFields": [{ "name": "name", "required": false}]
-                }
-              ]
-            }
-          }
-          EOF
-          go run cmd/server/main.go --configFile $ROOT_DIR/stitch-cli/testdata/configs/stitch_server_test_config.json --configFile ./atlas_config.json
+          export AWS_ACCESS_KEY_ID='${baas_test_aws_key}'
+          export AWS_SECRET_ACCESS_KEY='${baas_test_aws_secret}'
+
+          go run cmd/server/main.go --configFile $ROOT_DIR/baas/etc/configs/test_cli_config.json
     - command: shell.exec
       params:
         shell: "bash"
@@ -375,15 +359,15 @@ buildvariants:
   run_on:
     - rhel70
   expansions:
-    go_url: "https://dl.google.com/go/go1.13.6.linux-amd64.tar.gz"
-    server_baas_lib_url: 'https://s3.amazonaws.com/stitch-artifacts/stitch-support/stitch-support-rhel-70-4.3.2-721-ge791a2e-patch-5e2a6ad2a4cf473ae2e67b09.tgz'
+    server_baas_lib_url: "https://s3.amazonaws.com/stitch-artifacts/stitch-support/stitch-support-rhel-70-4.3.2-721-ge791a2e-patch-5e2a6ad2a4cf473ae2e67b09.tgz"
+    go_url: "https://dl.google.com/go/go1.15.11.linux-amd64.tar.gz"
     mongodb_url: https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-4.0.2.tgz
     node_version: 12.16.2
     transpiler_target: node8-linux
-    libmongo_url: 'https://s3.amazonaws.com//stitch-artifacts/stitch-mongo-libs/stitch_mongo_libs_linux_64_patch_b1c679a26ecb975372de41238ea44e4719b8fbf0_5f3d91c10ae6066889184912_20_08_19_20_57_17/libmongo.so'
+    libmongo_url: "https://s3.amazonaws.com//stitch-artifacts/stitch-mongo-libs/stitch_mongo_libs_linux_64_patch_20e2e4201581e8a98e0f1eb87c62e23e985c7e15_608c2a54c9ec44445262d94b_21_04_30_16_03_33/libmongo.so"
     yarn_url: "https://s3.amazonaws.com/stitch-artifacts/yarn/latest.tar.gz"
     mongoDBCloudURL: https://cloud-dev.mongodb.com
-    stitchServerURL: http://localhost:8080
+    stitchServerURL: http://localhost:9090
     version: 1.13.0
   tasks:
   - name: test_unit
