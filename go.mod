@@ -1,6 +1,6 @@
 module github.com/10gen/stitch-cli
 
-go 1.13
+go 1.15
 
 require (
 	github.com/armon/go-radix v0.0.0-20170727155443-1fca145dffbc // indirect
