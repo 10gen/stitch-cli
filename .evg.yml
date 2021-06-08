@@ -133,25 +133,7 @@ functions:
           export AWS_ACCESS_KEY_ID='${baas_test_aws_key}'
           export AWS_SECRET_ACCESS_KEY='${baas_test_aws_secret}'
 
-          cat > atlas_config.json <<EOF
-          {
-            "admin": {
-              "authProviders": [
-                {
-                  "name": "mongodb-cloud",
-                  "type": "mongodb-cloud",
-                  "config": {
-                      "baseUrl": "https://cloud-dev.mongodb.com",
-                      "adminUsername": "${stitch_mongodb_cloud_atlas_admin_username}",
-                      "adminAPIKey": "${stitch_mongodb_cloud_atlas_admin_api_key}"
-                    },
-                    "metadataFields": [{ "name": "name", "required": false}]
-                }
-              ]
-            }
-          }
-          EOF
-          go run cmd/server/main.go --configFile $ROOT_DIR/baas/etc/configs/test_cli_config.json --configFile ./atlas_config.json
+          go run cmd/server/main.go --configFile $ROOT_DIR/baas/etc/configs/test_cli_config.json
     - command: shell.exec
       params:
         shell: "bash"
